@@ -1,11 +1,11 @@
 {
-    "display_name": "Lovense Control",
+    "display_name": "TimelessTavern Lovense Cloud",
     "loading_order": 100,
     "requires": [],
     "optional": [],
     "js": "index.js",
     "css": "style.css",
-    "author": "Marinara",
-    "version": "1.1.0",
-    "homePage": "https://github.com/SillyTavern/SillyTavern"
+    "author": "Hyperion",
+    "version": "1.0.0",
+    "homePage": "https://github.com/hype-hosting/SillyTavern-Lovense-Cloud"
 }

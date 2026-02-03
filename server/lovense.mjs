@@ -1,82 +1,103 @@
 import https from 'https';
 
-/**
- * Plugin metadata
- */
+// --- CONFIGURATION ---
+// PASTE YOUR TOKEN HERE
+const LOVENSE_DEV_TOKEN = 'PASTE_YOUR_DEVELOPER_TOKEN_HERE'; 
+// ---------------------
+
 export const info = {
     id: 'lovense',
-    name: 'Lovense Control Plugin',
-    description: 'Proxy endpoint for Lovense API requests to bypass CORS and handle self-signed certificates',
+    name: 'Lovense Cloud Control',
+    description: 'Bridge for Lovense Online (Cloud) API',
 };
 
-/**
- * Initialize the plugin
- * @param {import('express').Router} router - Express router for this plugin
- */
 export async function init(router) {
-    console.log('Loading Lovense Control server plugin...');
+    console.log('Loading Lovense Cloud Control plugin...');
 
-    /**
-     * Proxy endpoint for Lovense API requests
-     * This allows bypassing CORS and self-signed certificate issues
-     */
-    router.post('/command', async (req, res) => {
-        const { url, ...commandData } = req.body;
-
-        if (!url) {
-            return res.status(400).json({ error: 'URL is required' });
-        }
-
-        try {
-            const urlObj = new URL(url);
-            const postData = JSON.stringify(commandData);
-
+    // Helper to make HTTPS requests to Lovense
+    const callLovenseApi = (path, data) => {
+        return new Promise((resolve, reject) => {
+            const postData = JSON.stringify(data);
             const options = {
-                hostname: urlObj.hostname,
-                port: urlObj.port || 443,
-                path: urlObj.pathname,
+                hostname: 'api.lovense.com',
+                port: 443,
+                path: '/api/lan' + path, // Maps to https://api.lovense.com/api/lan/...
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Content-Length': Buffer.byteLength(postData),
                 },
-                // Accept self-signed certificates
-                rejectUnauthorized: false,
             };
 
-            const proxyReq = https.request(options, (proxyRes) => {
-                let data = '';
-
-                proxyRes.on('data', (chunk) => {
-                    data += chunk;
-                });
-
-                proxyRes.on('end', () => {
+            const req = https.request(options, (res) => {
+                let body = '';
+                res.on('data', (chunk) => body += chunk);
+                res.on('end', () => {
                     try {
-                        const jsonData = JSON.parse(data);
-                        res.json(jsonData);
-                    } catch (error) {
-                        console.error('[Lovense] Failed to parse response:', error);
-                        res.status(500).json({ error: 'Invalid response from Lovense device' });
+                        resolve(JSON.parse(body));
+                    } catch (e) {
+                        reject(e);
                     }
                 });
             });
 
-            proxyReq.on('error', (error) => {
-                console.error('[Lovense] Proxy request error:', error);
-                res.status(500).json({
-                    error: 'Failed to connect to Lovense device',
-                    details: error.message,
-                });
-            });
+            req.on('error', (e) => reject(e));
+            req.write(postData);
+            req.end();
+        });
+    };
 
-            proxyReq.write(postData);
-            proxyReq.end();
+    // 1. Generate QR Code
+    router.post('/get-qr', async (req, res) => {
+        const { uid, uname } = req.body;
+        
+        if (!LOVENSE_DEV_TOKEN || LOVENSE_DEV_TOKEN.includes('PASTE_YOUR')) {
+            return res.status(500).json({ error: 'Server Developer Token not configured' });
+        }
+
+        try {
+            // Lovense API: Get QR Code
+            const result = await callLovenseApi('/getQrCode', {
+                token: LOVENSE_DEV_TOKEN,
+                uid: uid, // Unique Session ID from client
+                uname: uname || 'SillyTavern User',
+                v: 2
+            });
+            res.json(result);
         } catch (error) {
-            console.error('[Lovense] Error:', error);
+            console.error('[Lovense] QR Error:', error);
             res.status(500).json({ error: error.message });
         }
     });
 
-    console.log('Lovense Control server plugin loaded successfully');
+    // 2. Send Command via Cloud
+    router.post('/command', async (req, res) => {
+        const { uid, command, action, timeSec, loopRunningSec, loopPauseSec, stopPrevious, toy, apiVer } = req.body;
+
+        // Construct payload for Lovense Cloud API
+        // Note: The Cloud API parameters match the Local API parameters
+        const payload = {
+            token: LOVENSE_DEV_TOKEN,
+            uid: uid, // Target the specific user
+            command: command || 'Function',
+            action,
+            timeSec,
+            loopRunningSec,
+            loopPauseSec,
+            stopPrevious,
+            toy,
+            apiVer: apiVer || 1
+        };
+
+        try {
+            const result = await callLovenseApi('/command', payload);
+            console.log(`[Lovense] Command sent to UID ${uid}: ${action} (Result: ${result.message})`);
+            res.json(result);
+        } catch (error) {
+            console.error('[Lovense] Command Error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    console.log('Lovense Cloud Control loaded. Remember to copy this file to /plugins/ if you haven\'t already!');
 }

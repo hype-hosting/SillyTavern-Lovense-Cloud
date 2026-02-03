@@ -4,13 +4,13 @@
 
 This version uses the **Lovense Standard (Cloud) API** instead of the Local LAN API. This allows multiple users on a public/hosted SillyTavern instance to connect their own devices remotely via QR code, without needing to be on the same network as the server.
 
-## 🚀 Features
+## Features
 * **Remote Connection**: Users can connect from anywhere via the internet.
 * **Multi-User Support**: Each user gets a unique session/UID.
 * **QR Code Pairing**: Simple connection process using the Lovense Remote mobile app.
 * **No VPN Required**: Does not require the server and user to be on the same LAN.
 
-## ⚠️ Admin Requirements
+## Admin Requirements
 **Before installing, you (the server admin) must obtain a free Developer Token from Lovense.**
 1.  Go to the [Lovense Developer Dashboard](https://developer.lovense.com/).
 2.  Log in and request a **Developer Token**.
@@ -18,7 +18,7 @@ This version uses the **Lovense Standard (Cloud) API** instead of the Local LAN 
 
 ---
 
-## 📥 Installation
+## Installation
 
 ### 1. Install the Extension
 In SillyTavern:

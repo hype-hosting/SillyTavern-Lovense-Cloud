@@ -853,13 +853,8 @@ function setupUI() {
 
     // Connection
     $('#lovense_connect_button').on('click', async function () {
-        toastr.info('Checking connection to Lovense Remote...');
-        const connected = await checkConnection();
-        if (connected) {
-            toastr.success('Connected to Lovense device(s)!');
-        } else {
-            toastr.error('Could not connect. Make sure Lovense Remote is running and your device is paired.');
-        }
+        toastr.info('Requesting QR Code...');
+        await generateQrCode();
     });
 
     // Test controls
@@ -893,36 +888,6 @@ function setupUI() {
 
         toastr.success('All devices stopped and queue cleared');
     });
-}
-
-/**
- * Start periodic connection checking
- */
-function startConnectionChecking() {
-    if (connectionCheckInterval) {
-        return; // Already running
-    }
-
-    // Check immediately
-    checkConnection();
-
-    // Then check every 10 seconds
-    connectionCheckInterval = setInterval(() => {
-        checkConnection();
-    }, 10000);
-
-    console.log('[Lovense] Started connection checking');
-}
-
-/**
- * Stop periodic connection checking
- */
-function stopConnectionChecking() {
-    if (connectionCheckInterval) {
-        clearInterval(connectionCheckInterval);
-        connectionCheckInterval = null;
-        console.log('[Lovense] Stopped connection checking');
-    }
 }
 
 /**

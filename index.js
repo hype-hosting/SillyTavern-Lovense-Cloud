@@ -47,9 +47,9 @@ const TOY_CAPABILITIES = {
 const defaultSettings = {
     enabled: false,
     connected: false,
+    uid: '', // NEW: Stores unique user ID
     toys: {},
     local_ip: '127-0-0-1.lovense.club',
-    local_port: '30010',
     guidelines: `1. Match intensity to context: gentle (1-10), moderate (11-15), intense (16-20)
 2. Use commands that fit the scene naturally
 3. Multiple commands per response allowed
@@ -67,52 +67,52 @@ let streamingText = ''; // Accumulate streaming text
 let isLooping = false; // Flag to control loop execution
 
 /**
- * Check connection to Lovense Remote
+ * Generate QR code function
  */
-async function checkConnection() {
+async function generateQrCode() {
     const settings = extension_settings[MODULE_NAME];
-    const lovenseUrl = `https://${settings.local_ip}:${settings.local_port}/command`;
+
+    // Generate a UID if one doesn't exist
+    if (!settings.uid) {
+        settings.uid = Date.now().toString(36) + Math.random().toString(36).substr(2);
+        saveSettingsDebounced();
+    }
 
     try {
-        // Use SillyTavern's proxy to avoid CORS issues with self-signed certificates
-        const response = await fetch('/api/plugins/lovense/command', {
+        const response = await fetch('/api/plugins/lovense/get-qr', {
             method: 'POST',
             headers: getRequestHeaders(),
             body: JSON.stringify({
-                url: lovenseUrl,
-                command: 'GetToys',
+                uid: settings.uid,
+                uname: 'SillyTavern User' 
             }),
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
         const data = await response.json();
 
-        if (data.code === 200 && data.data && data.data.toys) {
-            const toysData = typeof data.data.toys === 'string' ? JSON.parse(data.data.toys) : data.data.toys;
-            connectedToys = toysData;
-            settings.toys = toysData;
-            settings.connected = true;
+        if (data.result === true && data.data && data.data.qr) {
+            // Show QR Code to user
+            // You will need to add an <img> tag to your settings.html to display this URL
+            $('#lovense_qr_image').attr('src', data.data.qr).show();
+            toastr.success('Scan the QR code with your Lovense App!');
+
+            // Optimistically assume connected after scan (or implement polling)
+            settings.connected = true; 
             saveSettingsDebounced();
             updateConnectionStatus();
-            updatePrompt();
             return true;
         } else {
-            settings.connected = false;
-            connectedToys = {};
-            updateConnectionStatus();
+            toastr.error('Failed to get QR Code: ' + (data.message || 'Unknown error'));
             return false;
         }
     } catch (error) {
-        console.log('[Lovense] Not connected:', error.message);
-        settings.connected = false;
-        connectedToys = {};
-        updateConnectionStatus();
+        console.error(error);
+        toastr.error('Server error. Check console.');
         return false;
     }
-}/**
+}
+
+/**
  * Update connection status UI
  */
 function updateConnectionStatus() {
@@ -152,21 +152,14 @@ function updateConnectionStatus() {
  */
 async function sendLovenseCommand(command, trackAsLast = true, silent = false) {
     const settings = extension_settings[MODULE_NAME];
-
-    if (!settings.connected) {
-        console.warn('[Lovense] Not connected to any device');
-        return false;
-    }
+    if (!settings.uid) return false;
 
     try {
-        const lovenseUrl = `https://${settings.local_ip}:${settings.local_port}/command`;
-
-        // Use SillyTavern's proxy to avoid CORS issues
         const response = await fetch('/api/plugins/lovense/command', {
             method: 'POST',
             headers: getRequestHeaders(),
             body: JSON.stringify({
-                url: lovenseUrl,
+                uid: settings.uid, // The Key Difference: Send UID, not URL
                 ...command,
             }),
         });

@@ -119,30 +119,20 @@ function updateConnectionStatus() {
     const settings = extension_settings[MODULE_NAME];
     const statusDiv = $('#lovense_status');
     const statusText = $('#lovense_status_text');
-    const toysList = $('#lovense_toy_list');
-    const toysSection = $('#lovense_toys_section');
     const testButtons = $('#lovense_test_controls button');
 
-    if (settings.connected && connectedToys && Object.keys(connectedToys).length > 0) {
+    // MODIFIED: Trust the "connected" setting directly, ignore toy list
+    if (settings.connected) {
         statusDiv.removeClass('disconnected').addClass('connected');
-        statusText.text('Connected');
-
-        // Display connected toys
-        toysList.empty();
-        for (const [toyId, toy] of Object.entries(connectedToys)) {
-            const toyItem = $('<li class="lovense_toy_item"></li>');
-            toyItem.html(`
-                <span class="lovense_toy_name">${toy.name || 'Unknown'} ${toy.nickName ? '(' + toy.nickName + ')' : ''}</span>
-                <span class="lovense_toy_battery">Battery: ${toy.battery || 'N/A'}%</span>
-            `);
-            toysList.append(toyItem);
-        }
-        toysSection.show();
+        statusText.text('Connected (Cloud)');
+        
+        // Unlock the buttons
         testButtons.prop('disabled', false);
     } else {
         statusDiv.removeClass('connected').addClass('disconnected');
         statusText.text('Not Connected');
-        toysSection.hide();
+        
+        // Lock the buttons
         testButtons.prop('disabled', true);
     }
 }

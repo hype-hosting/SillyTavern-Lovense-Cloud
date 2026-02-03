@@ -56,48 +56,16 @@
 
             <!-- Connection Section -->
             <div id="lovense_connection_section">
-                <h4 style="margin-top: 10px; margin-bottom: 5px;">Device Connection</h4>
-
-                <div id="lovense_status" class="lovense_status disconnected">
-                    <strong>Status:</strong> <span id="lovense_status_text">Not Connected</span>
-                </div>
-
                 <button id="lovense_connect_button" class="menu_button">
-                    <i class="fa-solid fa-plug"></i> Check Connection
+                    <i class="fa-solid fa-qrcode"></i> Generate QR Code
                 </button>
 
-                <div id="lovense_toys_section" style="display: none;">
-                    <h4 style="margin-top: 10px; margin-bottom: 5px;">Connected Toys</h4>
-                    <ul id="lovense_toy_list" class="lovense_toy_list"></ul>
+                <div style="text-align: center; margin-top: 10px;">
+                    <img id="lovense_qr_image" style="max-width: 200px; display: none; border: 5px solid white; border-radius: 5px;" />
                 </div>
+            </div>
 
-                <div class="lovense_advanced_settings" style="margin-top: 10px;">
-                    <details>
-                        <summary><strong>Advanced Connection Settings</strong></summary>
-                        <div style="padding: 10px 0;">
-                            <label for="lovense_local_ip" style="margin-bottom: 3px;">
-                                <b>Local IP/Domain</b>
-                            </label>
-                            <input type="text" id="lovense_local_ip" class="text_pole" value="127-0-0-1.lovense.club" />
-                            <small class="notes">
-                                <strong>PC:</strong> <code>127-0-0-1.lovense.club</code> (default)<br>
-                                <strong>Mobile:</strong> Find in Lovense Remote app settings (e.g., <code>192-168-1-44.lovense.club</code>)
-                            </small>
-
-                            <label for="lovense_local_port" style="margin-top: 10px; margin-bottom: 3px;">
-                                <b>Local Port</b>
-                            </label>
-                            <input type="text" id="lovense_local_port" class="text_pole" value="30010" />
-                            <small class="notes">
-                                <strong>PC:</strong> <code>30010</code> (default)<br>
-                                <strong>Mobile:</strong> Usually <code>34568</code> or shown in app settings
-                            </small>
-                            </div>
-                        </details>
-                    </div>
-                </div>
-
-<!-- Guidelines Settings -->
+            <!-- Guidelines Settings -->
             <div id="lovense_guidelines_section" style="margin-top: 10px;">
                 <h4 style="margin-top: 10px; margin-bottom: 5px;">AI Guidelines</h4>
 

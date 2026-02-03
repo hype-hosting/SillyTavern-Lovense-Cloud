@@ -23,7 +23,7 @@ This version uses the **Lovense Standard (Cloud) API** instead of the Local LAN 
 ### 1. Install the Extension
 In SillyTavern:
 1.  Go to **Extensions** → **Install Extension**.
-2.  Paste the URL of this repository: `https://github.com/hype-hosting/Timeless-Lovense`
+2.  Paste the URL of this repository: `https://github.com/hype-hosting/SillyTavern-Lovense-Cloud`
 3.  Click **Install**.
 
 ### 2. Configure the Server Plugin (Crucial)

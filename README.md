@@ -2,8 +2,6 @@
 
 **A fork of the [original extension](https://github.com/SpicyMarinara/SillyTavern-Lovense) by SpicyMarinara, modified for hosted/cloud SillyTavern instances.**
 
-![Lovense Control](https://i.imgur.com/Zyuiqts.jpeg)
-
 This version uses the **Lovense Standard (Cloud) API** instead of the Local LAN API. This allows multiple users on a public/hosted SillyTavern instance to connect their own devices remotely via QR code, without needing to be on the same network as the server.
 
 ## 🚀 Features

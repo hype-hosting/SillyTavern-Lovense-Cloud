@@ -14,6 +14,14 @@ export const info = {
 export async function init(router) {
     console.log('Loading Lovense Cloud Control plugin...');
 
+    // Helper to clean token
+    const getToken = () => {
+        if (!LOVENSE_DEV_TOKEN || LOVENSE_DEV_TOKEN.includes('PASTE_YOUR')) {
+            return null;
+        }
+        return LOVENSE_DEV_TOKEN.trim(); // Removes accidental spaces
+    };
+
     // Helper to make HTTPS requests to Lovense
     const callLovenseApi = (path, data) => {
         return new Promise((resolve, reject) => {
@@ -21,7 +29,7 @@ export async function init(router) {
             const options = {
                 hostname: 'api.lovense.com',
                 port: 443,
-                path: '/api/lan' + path, // Maps to https://api.lovense.com/api/lan/...
+                path: '/api/lan' + path, 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,6 +44,7 @@ export async function init(router) {
                     try {
                         resolve(JSON.parse(body));
                     } catch (e) {
+                        console.error('[Lovense] Parse Error. Body:', body);
                         reject(e);
                     }
                 });
@@ -50,16 +59,16 @@ export async function init(router) {
     // 1. Generate QR Code
     router.post('/get-qr', async (req, res) => {
         const { uid, uname } = req.body;
+        const token = getToken();
         
-        if (!LOVENSE_DEV_TOKEN || LOVENSE_DEV_TOKEN.includes('PASTE_YOUR')) {
+        if (!token) {
             return res.status(500).json({ error: 'Server Developer Token not configured' });
         }
 
         try {
-            // Lovense API: Get QR Code
             const result = await callLovenseApi('/getQrCode', {
-                token: LOVENSE_DEV_TOKEN,
-                uid: uid, // Unique Session ID from client
+                token: token,
+                uid: uid, 
                 uname: uname || 'SillyTavern User',
                 v: 2
             });
@@ -73,12 +82,13 @@ export async function init(router) {
     // 2. Send Command via Cloud
     router.post('/command', async (req, res) => {
         const { uid, command, action, timeSec, loopRunningSec, loopPauseSec, stopPrevious, toy, apiVer } = req.body;
+        const token = getToken();
 
-        // Construct payload for Lovense Cloud API
-        // Note: The Cloud API parameters match the Local API parameters
+        if (!token) return res.status(500).json({ error: 'Token missing' });
+
         const payload = {
-            token: LOVENSE_DEV_TOKEN,
-            uid: uid, // Target the specific user
+            token: token,
+            uid: uid,
             command: command || 'Function',
             action,
             timeSec,
@@ -86,12 +96,18 @@ export async function init(router) {
             loopPauseSec,
             stopPrevious,
             toy,
-            apiVer: apiVer || 1
+            apiVer: 2 // FORCE API VERSION 2
         };
 
         try {
             const result = await callLovenseApi('/command', payload);
-            console.log(`[Lovense] Command sent to UID ${uid}: ${action} (Result: ${result.message})`);
+            console.log(`[Lovense] Command sent to UID ${uid}: ${action} (Result: ${result.message || 'Unknown'})`);
+            
+            // Log full result if invalid token to debug
+            if (result.message === 'Invalid token!') {
+                console.warn('[Lovense] TOKEN INVALID. Please check "Standard API Settings" in Lovense Dashboard.');
+            }
+            
             res.json(result);
         } catch (error) {
             console.error('[Lovense] Command Error:', error);

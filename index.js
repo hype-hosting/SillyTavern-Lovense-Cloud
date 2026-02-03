@@ -895,7 +895,7 @@ function setupUI() {
  */
 jQuery(async () => {
     // Load settings HTML manually since we're in data/default-user/extensions
-    const settingsResponse = await fetch('/scripts/extensions/third-party/SillyTavern-Lovense/settings.html');
+    const settingsResponse = await fetch('/scripts/extensions/third-party/SillyTavern-Lovense-Cloud/settings.html');
     const settingsHtml = await settingsResponse.text();
     $('#extensions_settings2').append(settingsHtml);
 

@@ -1,8 +1,11 @@
 # SillyTavern Lovense Cloud (Multi-User Fork)
 
-**A fork of the [original extension](https://github.com/SpicyMarinara/SillyTavern-Lovense) by SpicyMarinara, modified for hosted/cloud SillyTavern instances.**
+**A fork of the [original extension](https://github.com/SpicyMarinara/SillyTavern-Lovense) by SpicyMarinara, modified by Hyperion for hosted/cloud SillyTavern instances.**
 
 This version uses the **Lovense Standard (Cloud) API** instead of the Local LAN API. This allows multiple users on a public/hosted SillyTavern instance to connect their own devices remotely via QR code, without needing to be on the same network as the server.
+> Support [Hyperion](http://ko-fi.com/hype)
+
+> Support [SpicyMarinara](https://github.com/SpicyMarinara)
 
 ## Features
 - **Remote Connection**: Users can connect from anywhere via the internet.

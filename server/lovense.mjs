@@ -79,56 +79,29 @@ export async function init(router) {
         }
     });
 
-    // 2. Check connected toys
-    router.post('/check-toys', async (req, res) => {
-        const { uid } = req.body;
-        const token = getToken();
-
-        if (!token) return res.status(500).json({ error: 'Token missing' });
-
-        try {
-            const result = await callLovenseApi('/command', {
-                token: token,
-                uid: uid,
-                command: 'GetToys',
-                apiVer: 1,
-            });
-            res.json(result);
-        } catch (error) {
-            console.error('[Lovense] Check Toys Error:', error);
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // 3. Send Command via Cloud
+    // 2. Send Command via Cloud
+    // Passes through ALL fields from the request body so that Preset (name),
+    // Pattern (rule, strength), and any future fields are forwarded to Lovense.
     router.post('/command', async (req, res) => {
-        const { uid, command, action, timeSec, loopRunningSec, loopPauseSec, stopPrevious, toy, apiVer } = req.body;
         const token = getToken();
-
         if (!token) return res.status(500).json({ error: 'Token missing' });
 
+        // Spread all client fields, then inject/override token
+        const { uid, ...rest } = req.body;
         const payload = {
+            ...rest,
             token: token,
             uid: uid,
-            command: command || 'Function',
-            action,
-            timeSec,
-            loopRunningSec,
-            loopPauseSec,
-            stopPrevious,
-            toy,
-            apiVer: 2 // FORCE API VERSION 2
         };
 
         try {
             const result = await callLovenseApi('/command', payload);
-            console.log(`[Lovense] Command sent to UID ${uid}: ${action} (Result: ${result.message || 'Unknown'})`);
-            
-            // Log full result if invalid token to debug
+            console.log(`[Lovense] Command sent to UID ${uid}: ${rest.action || rest.command} (Result: ${result.code} - ${result.message || 'Unknown'})`);
+
             if (result.message === 'Invalid token!') {
                 console.warn('[Lovense] TOKEN INVALID. Please check "Standard API Settings" in Lovense Dashboard.');
             }
-            
+
             res.json(result);
         } catch (error) {
             console.error('[Lovense] Command Error:', error);

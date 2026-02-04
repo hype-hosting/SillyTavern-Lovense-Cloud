@@ -66,51 +66,51 @@ let streamingText = ''; // Accumulate streaming text
 let isLooping = false; // Flag to control loop execution
 
 /**
- * Check connected toys via the Cloud API
- * Returns true if toys are found, false otherwise
+ * Check if toys are connected by sending a silent stop command as a ping.
+ * The Standard (Cloud) API does not support GetToys, so we infer connection
+ * status from the command response code: 200 = toys connected, other = not.
  */
 async function checkConnectedToys() {
     const settings = extension_settings[MODULE_NAME];
     if (!settings.uid) return false;
 
     try {
-        const response = await fetch('/api/plugins/lovense/check-toys', {
+        const response = await fetch('/api/plugins/lovense/command', {
             method: 'POST',
             headers: getRequestHeaders(),
-            body: JSON.stringify({ uid: settings.uid }),
+            body: JSON.stringify({
+                uid: settings.uid,
+                command: 'Function',
+                action: 'Stop',
+                timeSec: 0,
+                apiVer: 1,
+            }),
         });
 
+        if (!response.ok) return false;
+
         const data = await response.json();
+        const toysFound = data.code === 200;
 
-        if (data.code === 200 && data.data) {
-            // data.data is a map of toyId -> toy info
-            const toys = data.data.toys || data.data;
-            const toyCount = typeof toys === 'string' ? JSON.parse(toys) : toys;
-
-            if (toyCount && typeof toyCount === 'object' && Object.keys(toyCount).length > 0) {
-                connectedToys = toyCount;
-                settings.toys = toyCount;
-                settings.connected = true;
-                saveSettingsDebounced();
-                updateConnectionStatus();
-                updatePrompt();
-                return true;
-            }
-        }
-
-        // No toys found — mark disconnected only if we were previously connected
-        if (settings.connected) {
+        if (toysFound && !settings.connected) {
+            settings.connected = true;
+            saveSettingsDebounced();
+            updateConnectionStatus();
+            updatePrompt();
+            console.log('[Lovense] Device connected');
+        } else if (!toysFound && settings.connected) {
             connectedToys = {};
             settings.toys = {};
             settings.connected = false;
             saveSettingsDebounced();
             updateConnectionStatus();
             updatePrompt();
+            console.log('[Lovense] Device disconnected');
         }
-        return false;
+
+        return toysFound;
     } catch (error) {
-        // Network error — don't change connection state
-        console.error('[Lovense] Error checking toys:', error);
+        console.error('[Lovense] Error checking connection:', error);
         return false;
     }
 }
@@ -168,6 +168,14 @@ async function generateQrCode() {
             }),
         });
 
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const errMsg = errData.error || errData.message || `Server returned ${response.status}`;
+            console.error('[Lovense] QR Code error:', errMsg);
+            toastr.error('Failed to get QR Code: ' + errMsg);
+            return false;
+        }
+
         const data = await response.json();
 
         if (data.result === true && data.data && data.data.qr) {
@@ -179,12 +187,14 @@ async function generateQrCode() {
             startConnectionChecking();
             return true;
         } else {
-            toastr.error('Failed to get QR Code: ' + (data.message || 'Unknown error'));
+            const errMsg = data.error || data.message || 'Unknown error';
+            console.error('[Lovense] QR Code error:', data);
+            toastr.error('Failed to get QR Code: ' + errMsg);
             return false;
         }
     } catch (error) {
-        console.error(error);
-        toastr.error('Server error. Check console.');
+        console.error('[Lovense] QR Code request failed:', error);
+        toastr.error('Server error. Is the Lovense plugin loaded? Check server console.');
         return false;
     }
 }

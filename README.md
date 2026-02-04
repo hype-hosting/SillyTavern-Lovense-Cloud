@@ -38,14 +38,14 @@ enableServerPlugins: true
 ```
 
 **Step 2: Copy and Configure the Plugin File**
-1. Navigate to your SillyTavern directory: `data/default-user/extensions/SillyTavern-Lovense/server/`.
+1. Navigate to your SillyTavern extensions directory: `data/default-user/extensions/third-party/SillyTavern-Lovense-Cloud/server/`.
 2. Open `lovense.mjs` in a text editor.
 3. Find the line: `const LOVENSE_DEV_TOKEN = 'PASTE_YOUR_DEVELOPER_TOKEN_HERE';`
 4. Paste your actual Developer Token inside the quotes.
 5. Save the file.
 6. Copy `lovense.mjs` to your SillyTavern root `plugins/` folder.
-- Windows: `copy data\default-user\extensions\SillyTavern-Lovense\server\lovense.mjs plugins\`
-- Linux/Mac: `cp data/default-user/extensions/SillyTavern-Lovense/server/lovense.mjs plugins/`
+- Windows: `copy data\default-user\extensions\third-party\SillyTavern-Lovense-Cloud\server\lovense.mjs plugins\`
+- Linux/Mac: `cp data/default-user/extensions/third-party/SillyTavern-Lovense-Cloud/server/lovense.mjs plugins/`
 
 **Step 3: Restart SillyTavern** You must fully restart the SillyTavern server (node.js process) for the plugin to load.
 
@@ -54,7 +54,7 @@ enableServerPlugins: true
 ## User Guide: How to Connect
 1. Open **Lovense Remote** on your mobile phone.
 2. Ensure your toy is connected to the app via Bluetooth.
-3. In SillyTavern, go to **Extensions** → **Lovense Control**.
+3. In SillyTavern, go to **Extensions** → **Timeless Lovense Control**.
 4. Click the "**Generate QR Code**" button.
 5. In the Lovense Remote app, tap the "**+**" **(Add)** button or "**Scan QR**" feature.
 6. Scan the code displayed in SillyTavern.
@@ -67,27 +67,30 @@ The AI controls devices using invisible xml tags. These function exactly like th
 
 **Basic Commands**
 ```xml
-<lovense:vibrate intensity="10"/>        - Vibrate at intensity 10 (0-20)
-<lovense:rotate intensity="15"/>         - Rotate at intensity 15 (0-20)
-<lovense:pump intensity="2"/>            - Pump at intensity 2 (0-3)
+<lovense:vibrate="10" time="5"/>         - Vibrate at intensity 10 (0-20) for 5 seconds
+<lovense:rotate="15" time="5"/>          - Rotate at intensity 15 (0-20) for 5 seconds
+<lovense:pump="2" time="5"/>             - Pump at intensity 2 (0-3) for 5 seconds
 <lovense:stop/>                          - Stop all activity
 ```
 
 **Preset Patterns**
 ```xml
-<lovense:preset name="pulse"/>           - Pulse pattern
-<lovense:preset name="wave"/>            - Wave pattern
-<lovense:preset name="fireworks"/>       - Fireworks pattern
-<lovense:preset name="earthquake"/>      - Earthquake pattern
+<lovense:preset name="pulse" time="10"/>      - Pulse pattern for 10 seconds
+<lovense:preset name="wave" time="10"/>       - Wave pattern for 10 seconds
+<lovense:preset name="fireworks" time="10"/>  - Fireworks pattern for 10 seconds
+<lovense:preset name="earthquake" time="10"/> - Earthquake pattern for 10 seconds
 ```
 
 **Advanced**
 ```xml
-<lovense:vibrate intensity="15" duration="10"/>
+<lovense:vibrate="15" time="10"/>
     → Vibrate at intensity 15 for 10 seconds
 
-<lovense:vibrate intensity="12" loop="5" pause="2" duration="20"/>
+<lovense:vibrate="12" loop="5" pause="2" time="20"/>
     → Vibrate at 12, run for 5s, pause for 2s, repeat for 20s total
+
+<lovense:vibrate="10" rotate="15" time="10"/>
+    → Combine multiple functions in one command
 ```
 
 ---

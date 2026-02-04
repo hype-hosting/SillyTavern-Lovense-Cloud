@@ -79,7 +79,28 @@ export async function init(router) {
         }
     });
 
-    // 2. Send Command via Cloud
+    // 2. Check connected toys
+    router.post('/check-toys', async (req, res) => {
+        const { uid } = req.body;
+        const token = getToken();
+
+        if (!token) return res.status(500).json({ error: 'Token missing' });
+
+        try {
+            const result = await callLovenseApi('/command', {
+                token: token,
+                uid: uid,
+                command: 'GetToys',
+                apiVer: 1,
+            });
+            res.json(result);
+        } catch (error) {
+            console.error('[Lovense] Check Toys Error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // 3. Send Command via Cloud
     router.post('/command', async (req, res) => {
         const { uid, command, action, timeSec, loopRunningSec, loopPauseSec, stopPrevious, toy, apiVer } = req.body;
         const token = getToken();

@@ -950,36 +950,40 @@ function setupUI() {
  * Module initialization
  */
 jQuery(async () => {
-    // Load settings HTML manually since we're in data/default-user/extensions
-    const settingsResponse = await fetch('/scripts/extensions/third-party/SillyTavern-Lovense-Cloud/settings.html');
-    const settingsHtml = await settingsResponse.text();
-    $('#extensions_settings2').append(settingsHtml);
+    console.log('[Lovense] Loading extension...');
 
-    // Load settings
-    loadSettings();
+    try {
+        // Load settings HTML manually since we're in data/default-user/extensions
+        const settingsResponse = await fetch('/scripts/extensions/third-party/SillyTavern-Lovense-Cloud/settings.html');
 
-    // Setup UI handlers
-    setupUI();
+        if (!settingsResponse.ok) {
+            console.error(`[Lovense] Failed to load settings.html: ${settingsResponse.status} ${settingsResponse.statusText}`);
+            return;
+        }
 
-    // Start connection checking if enabled
-    if (extension_settings[MODULE_NAME]?.enabled) {
-        startConnectionChecking();
+        const settingsHtml = await settingsResponse.text();
+        $('#extensions_settings2').append(settingsHtml);
+
+        // Load settings
+        loadSettings();
+
+        // Setup UI handlers
+        setupUI();
+
+        // Register event listeners (do this before connection checking so they're always active)
+        eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
+        eventSource.on(event_types.STREAM_TOKEN_RECEIVED, onStreamTokenReceived);
+        eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
+        eventSource.on(event_types.GENERATION_ENDED, onGenerationEnded);
+        eventSource.on(event_types.CHAT_CHANGED, updatePrompt);
+
+        // Start connection checking if enabled (after event listeners are registered)
+        if (extension_settings[MODULE_NAME]?.enabled) {
+            startConnectionChecking();
+        }
+
+        console.log('[Lovense] Extension initialized successfully');
+    } catch (error) {
+        console.error('[Lovense] Failed to initialize extension:', error);
     }
-
-    console.log('[Lovense] Extension initialized successfully');
-
-    // Listen for AI messages (fallback for non-streaming)
-    eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
-
-    // Listen for streaming tokens (real-time command execution)
-    eventSource.on(event_types.STREAM_TOKEN_RECEIVED, onStreamTokenReceived);
-
-    // Clear command tracking when generation starts
-    eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
-
-    // Start looping when generation ends
-    eventSource.on(event_types.GENERATION_ENDED, onGenerationEnded);
-
-    // Listen for chat changes to update prompt
-    eventSource.on(event_types.CHAT_CHANGED, updatePrompt);
 });

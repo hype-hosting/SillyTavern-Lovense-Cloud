@@ -100,8 +100,9 @@ export async function init(router) {
         }
     });
 
-    // 3. Send Command via Cloud
+// 3. Send Command via Cloud
     router.post('/command', async (req, res) => {
+        // Extract apiVer from the request body
         const { uid, command, action, timeSec, loopRunningSec, loopPauseSec, stopPrevious, toy, apiVer } = req.body;
         const token = getToken();
 
@@ -117,14 +118,15 @@ export async function init(router) {
             loopPauseSec,
             stopPrevious,
             toy,
-            apiVer: 2 // FORCE API VERSION 2
+            // CRITICAL FIX: Use the apiVer passed from the client, default to 1 if missing.
+            // Do NOT force version 2, as this breaks basic "Function" commands.
+            apiVer: apiVer || 1 
         };
 
         try {
             const result = await callLovenseApi('/command', payload);
             console.log(`[Lovense] Command sent to UID ${uid}: ${action} (Result: ${result.message || 'Unknown'})`);
             
-            // Log full result if invalid token to debug
             if (result.message === 'Invalid token!') {
                 console.warn('[Lovense] TOKEN INVALID. Please check "Standard API Settings" in Lovense Dashboard.');
             }

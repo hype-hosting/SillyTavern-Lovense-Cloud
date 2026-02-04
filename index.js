@@ -49,7 +49,6 @@ const defaultSettings = {
     connected: false,
     uid: '', // NEW: Stores unique user ID
     toys: {},
-    local_ip: '127-0-0-1.lovense.club',
     guidelines: `1. Match intensity to context: gentle (1-10), moderate (11-15), intense (16-20)
 2. Use commands that fit the scene naturally
 3. Multiple commands per response allowed
@@ -65,6 +64,87 @@ let loopInterval = null; // Interval for looping commands
 let currentLoopIndex = 0; // Current position in the loop
 let streamingText = ''; // Accumulate streaming text
 let isLooping = false; // Flag to control loop execution
+
+/**
+ * Check connected toys via the Cloud API
+ * Returns true if toys are found, false otherwise
+ */
+async function checkConnectedToys() {
+    const settings = extension_settings[MODULE_NAME];
+    if (!settings.uid) return false;
+
+    try {
+        const response = await fetch('/api/plugins/lovense/check-toys', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({ uid: settings.uid }),
+        });
+
+        const data = await response.json();
+
+        if (data.code === 200 && data.data) {
+            // data.data is a map of toyId -> toy info
+            const toys = data.data.toys || data.data;
+            const toyCount = typeof toys === 'string' ? JSON.parse(toys) : toys;
+
+            if (toyCount && typeof toyCount === 'object' && Object.keys(toyCount).length > 0) {
+                connectedToys = toyCount;
+                settings.toys = toyCount;
+                settings.connected = true;
+                saveSettingsDebounced();
+                updateConnectionStatus();
+                updatePrompt();
+                return true;
+            }
+        }
+
+        // No toys found — mark disconnected only if we were previously connected
+        if (settings.connected) {
+            connectedToys = {};
+            settings.toys = {};
+            settings.connected = false;
+            saveSettingsDebounced();
+            updateConnectionStatus();
+            updatePrompt();
+        }
+        return false;
+    } catch (error) {
+        // Network error — don't change connection state
+        console.error('[Lovense] Error checking toys:', error);
+        return false;
+    }
+}
+
+/**
+ * Start periodic connection checking
+ */
+function startConnectionChecking() {
+    stopConnectionChecking();
+
+    const settings = extension_settings[MODULE_NAME];
+    if (!settings.enabled) return;
+
+    // Check immediately
+    checkConnectedToys();
+
+    // Then check every 30 seconds
+    connectionCheckInterval = setInterval(() => {
+        checkConnectedToys();
+    }, 30000);
+
+    console.log('[Lovense] Started connection checking');
+}
+
+/**
+ * Stop periodic connection checking
+ */
+function stopConnectionChecking() {
+    if (connectionCheckInterval) {
+        clearInterval(connectionCheckInterval);
+        connectionCheckInterval = null;
+        console.log('[Lovense] Stopped connection checking');
+    }
+}
 
 /**
  * Generate QR code function
@@ -84,7 +164,7 @@ async function generateQrCode() {
             headers: getRequestHeaders(),
             body: JSON.stringify({
                 uid: settings.uid,
-                uname: 'SillyTavern User' 
+                uname: 'SillyTavern User',
             }),
         });
 
@@ -92,14 +172,11 @@ async function generateQrCode() {
 
         if (data.result === true && data.data && data.data.qr) {
             // Show QR Code to user
-            // You will need to add an <img> tag to your settings.html to display this URL
             $('#lovense_qr_image').attr('src', data.data.qr).show();
-            toastr.success('Scan the QR code with your Lovense App!');
+            toastr.info('Scan the QR code with your Lovense App. Waiting for connection...');
 
-            // Optimistically assume connected after scan (or implement polling)
-            settings.connected = true; 
-            saveSettingsDebounced();
-            updateConnectionStatus();
+            // Start polling for connection instead of optimistically assuming connected
+            startConnectionChecking();
             return true;
         } else {
             toastr.error('Failed to get QR Code: ' + (data.message || 'Unknown error'));
@@ -641,30 +718,32 @@ function onGenerationEnded() {
  * Generate dynamic prompt based on connected toys
  */
 function generateDynamicPrompt() {
-    if (!connectedToys || Object.keys(connectedToys).length === 0) {
-        return '';
-    }
-
     const settings = extension_settings[MODULE_NAME];
+    const hasToys = connectedToys && Object.keys(connectedToys).length > 0;
 
     // Collect all unique capabilities from connected toys
     const capabilities = new Set(['vibrate']); // All toys can vibrate
     const toyNames = [];
     const toyDetails = [];
 
-    for (const toy of Object.values(connectedToys)) {
-        const toyName = (toy.name || '').toLowerCase();
-        const displayName = toy.name || 'Unknown';
-        toyNames.push(displayName);
+    if (hasToys) {
+        for (const toy of Object.values(connectedToys)) {
+            const toyName = (toy.name || '').toLowerCase();
+            const displayName = toy.name || 'Unknown';
+            toyNames.push(displayName);
 
-        // Collect device details
-        const toyCaps = TOY_CAPABILITIES[toyName] || ['vibrate'];
-        toyDetails.push({
-            name: displayName,
-            capabilities: toyCaps
-        });
+            // Collect device details
+            const toyCaps = TOY_CAPABILITIES[toyName] || ['vibrate'];
+            toyDetails.push({
+                name: displayName,
+                capabilities: toyCaps,
+            });
 
-        toyCaps.forEach(cap => capabilities.add(cap));
+            toyCaps.forEach(cap => capabilities.add(cap));
+        }
+    } else {
+        // Fallback: if connected but no toy data yet, include vibrate as default
+        toyNames.push('Lovense Device');
     }
 
     // Build capabilities section
@@ -783,8 +862,6 @@ function loadSettings() {
 
     // Restore settings to UI
     $('#lovense_enabled').prop('checked', settings.enabled);
-    $('#lovense_local_ip').val(settings.local_ip || '127-0-0-1.lovense.club');
-    $('#lovense_local_port').val(settings.local_port || '30010');
     $('#lovense_guidelines').val(settings.guidelines || defaultSettings.guidelines);
 
     // Restore connection state
@@ -812,17 +889,6 @@ function setupUI() {
         } else {
             stopConnectionChecking();
         }
-    });
-
-    // Local IP/Port settings
-    $('#lovense_local_ip').on('input', function () {
-        extension_settings[MODULE_NAME].local_ip = $(this).val();
-        saveSettingsDebounced();
-    });
-
-    $('#lovense_local_port').on('input', function () {
-        extension_settings[MODULE_NAME].local_port = $(this).val();
-        saveSettingsDebounced();
     });
 
     // Guidelines textarea

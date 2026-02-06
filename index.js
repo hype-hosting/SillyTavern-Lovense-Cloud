@@ -147,13 +147,14 @@ function stopConnectionChecking() {
 async function generateQrCode() {
     const settings = extension_settings[MODULE_NAME];
 
-    // Generate a UID if one doesn't exist
+    // Ensure a UID exists for this user
     if (!settings.uid) {
         settings.uid = Date.now().toString(36) + Math.random().toString(36).substr(2);
         saveSettingsDebounced();
     }
 
     try {
+        // Request a QR code from the server plugin
         const response = await fetch('/api/plugins/lovense/get-qr', {
             method: 'POST',
             headers: getRequestHeaders(),
@@ -165,24 +166,32 @@ async function generateQrCode() {
 
         const data = await response.json();
 
+        // On success, display the QR code and mark the session connected
         if (data.result === true && data.data && data.data.qr) {
-            // Show QR Code to user
             $('#lovense_qr_image').attr('src', data.data.qr).show();
-            toastr.info('Scan the QR code with your Lovense App. Waiting for connection...');
 
-            // Start polling for connection instead of optimistically assuming connected
+            // Optimistically mark the session as connected so the UI reflects the state
+            settings.connected = true;
+            saveSettingsDebounced();
+            updateConnectionStatus();
+            toastr.info('Scan the QR code with your Lovense app. Waiting for toys…');
+
+            // Begin polling for toy presence
             startConnectionChecking();
             return true;
-        } else {
-            toastr.error('Failed to get QR Code: ' + (data.message || 'Unknown error'));
-            return false;
         }
+
+        // Handle error response
+        toastr.error('Failed to get QR code: ' + (data.message || 'Unknown error'));
+        return false;
     } catch (error) {
-        console.error(error);
+        // Catch network or server errors
+        console.error('[Lovense] QR code generation error:', error);
         toastr.error('Server error. Check console.');
         return false;
     }
 }
+
 
 /**
  * Update connection status UI

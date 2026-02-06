@@ -65,6 +65,42 @@ let currentLoopIndex = 0; // Current position in the loop
 let streamingText = ''; // Accumulate streaming text
 let isLooping = false; // Flag to control loop execution
 
+// Regex patterns for stripping lovense tags from rendered messages
+const LOVENSE_TAG_ENTITY = /&lt;lovense:[\s\S]*?\/&gt;/gi;
+const LOVENSE_TAG_RAW = /<lovense[^>]*>/gi;
+
+/**
+ * Strip lovense XML tags from a rendered message element.
+ * Tags appear as visible text when the markdown renderer escapes them.
+ */
+function cleanLovenseTagsFromElement(mesElement) {
+    if (!mesElement) return;
+    let html = mesElement.innerHTML;
+    const original = html;
+    // Remove HTML-entity-escaped tags (most common - markdown escapes < and >)
+    html = html.replace(LOVENSE_TAG_ENTITY, '');
+    // Remove raw tags if they somehow survived in the DOM
+    html = html.replace(LOVENSE_TAG_RAW, '');
+    if (html !== original) {
+        mesElement.innerHTML = html;
+    }
+}
+
+/**
+ * Clean lovense tags from a specific message by index
+ */
+function onCharacterMessageRendered(messageIndex) {
+    const mesText = document.querySelector(`#chat .mes[mesid="${messageIndex}"] .mes_text`);
+    cleanLovenseTagsFromElement(mesText);
+}
+
+/**
+ * Clean lovense tags from all messages in the current chat
+ */
+function cleanAllChatMessages() {
+    document.querySelectorAll('#chat .mes .mes_text').forEach(cleanLovenseTagsFromElement);
+}
+
 /**
  * Check connected toys via the Cloud API
  * Returns true if toys are found, false otherwise
@@ -164,6 +200,12 @@ async function generateQrCode() {
             }),
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            toastr.error(errorData.error || `Server error ${response.status}. Is the plugin in /plugins/ and token configured?`);
+            return false;
+        }
+
         const data = await response.json();
 
         // On success, display the QR code and mark the session connected
@@ -230,17 +272,30 @@ async function sendLovenseCommand(command, trackAsLast = true, silent = false) {
             method: 'POST',
             headers: getRequestHeaders(),
             body: JSON.stringify({
-                uid: settings.uid, // The Key Difference: Send UID, not URL
+                uid: settings.uid,
                 ...command,
             }),
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData.error || `Server error ${response.status}`;
+            if (!silent) {
+                console.error('[Lovense] Server error:', errorMsg);
+                toastr.error('Lovense: ' + errorMsg);
+            }
+            return false;
+        }
+
         const result = await response.json();
         console.log('[Lovense] Command sent:', command, 'Result:', result);
 
+        if (result.code !== 200 && !silent) {
+            console.warn('[Lovense] API returned non-200:', result.message || result);
+        }
+
         return result.code === 200;
     } catch (error) {
-        // Only log and show errors if not silent
         if (!silent) {
             console.error('[Lovense] Error sending command:', error);
             toastr.error('Failed to send command to Lovense device');
@@ -980,6 +1035,23 @@ jQuery(async () => {
         eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
         eventSource.on(event_types.GENERATION_ENDED, onGenerationEnded);
         eventSource.on(event_types.CHAT_CHANGED, updatePrompt);
+
+        // Stop commands when user swipes to a different response
+        if (event_types.MESSAGE_SWIPED) {
+            eventSource.on(event_types.MESSAGE_SWIPED, () => {
+                stopLoopingCommands();
+                executedCommands.clear();
+                messageCommands = [];
+                streamingText = '';
+            });
+        }
+
+        // Clean lovense tags from rendered messages so they don't show in chat
+        if (event_types.CHARACTER_MESSAGE_RENDERED) {
+            eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onCharacterMessageRendered);
+        }
+        // Clean all messages when chat loads/changes (with delay to let DOM render)
+        eventSource.on(event_types.CHAT_CHANGED, () => setTimeout(cleanAllChatMessages, 200));
 
         // Start connection checking if enabled (after event listeners are registered)
         if (extension_settings[MODULE_NAME]?.enabled) {

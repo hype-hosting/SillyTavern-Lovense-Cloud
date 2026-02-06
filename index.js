@@ -70,49 +70,44 @@ let isLooping = false; // Flag to control loop execution
  * Returns true if toys are found, false otherwise
  */
 async function checkConnectedToys() {
-    const settings = extension_settings[MODULE_NAME];
-    if (!settings.uid) return false;
+  const settings = extension_settings[MODULE_NAME];
+  if (!settings.uid) return false;
 
-    try {
-        const response = await fetch('/api/plugins/lovense/check-toys', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-            body: JSON.stringify({ uid: settings.uid }),
-        });
+  try {
+    const response = await fetch('/api/plugins/lovense/check-toys', {
+      method: 'POST',
+      headers: getRequestHeaders(),
+      body: JSON.stringify({ uid: settings.uid }),
+    });
+    const data = await response.json();
+    const code = parseInt(data.code);
 
-        const data = await response.json();
-
-        if (data.code === 200 && data.data) {
-            // data.data is a map of toyId -> toy info
-            const toys = data.data.toys || data.data;
-            const toyCount = typeof toys === 'string' ? JSON.parse(toys) : toys;
-
-            if (toyCount && typeof toyCount === 'object' && Object.keys(toyCount).length > 0) {
-                connectedToys = toyCount;
-                settings.toys = toyCount;
-                settings.connected = true;
-                saveSettingsDebounced();
-                updateConnectionStatus();
-                updatePrompt();
-                return true;
-            }
-        }
-
-        // No toys found — mark disconnected only if we were previously connected
-        if (settings.connected) {
-            connectedToys = {};
-            settings.toys = {};
-            settings.connected = false;
-            saveSettingsDebounced();
-            updateConnectionStatus();
-            updatePrompt();
-        }
-        return false;
-    } catch (error) {
-        // Network error — don't change connection state
-        console.error('[Lovense] Error checking toys:', error);
-        return false;
+    if (code === 200) {
+      // Always mark the session as connected when API call succeeds
+      settings.connected = true;
+      // Parse toys if present
+      let toys = data.data?.toys || data.data || {};
+      toys = typeof toys === 'string' ? JSON.parse(toys) : toys;
+      connectedToys = toys || {};
+      settings.toys = connectedToys;
+      saveSettingsDebounced();
+      updateConnectionStatus();
+      updatePrompt();
+      return true;
     }
+
+    // If API returns a non‑200 code, clear connection and toys
+    settings.connected = false;
+    connectedToys = {};
+    settings.toys = {};
+    saveSettingsDebounced();
+    updateConnectionStatus();
+    updatePrompt();
+    return false;
+  } catch (err) {
+    console.error('[Lovense] Error checking toys:', err);
+    return false;
+  }
 }
 
 /**

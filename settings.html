@@ -1,0 +1,42 @@
+<div class="lovense-cloud-settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>Lovense Cloud</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content" style="display:none;">
+            <div class="flex-container">
+                <label class="checkbox_label">
+                    <input type="checkbox" id="lovense-enable">
+                    Enable functionality
+                </label>
+                <hr>
+                <label>
+                    Developer Token 
+                    <a href="https://www.lovense.com/user/developer/info" target="_blank" style="float:right;">Get Token</a>
+                </label>
+                <input type="password" id="lovense-token" class="text_pole" placeholder="Paste token here">
+                
+                <div id="lovense-qr-container" style="text-align: center; margin: 15px 0; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); border-radius: 5px;">
+                    <span style="opacity: 0.5; font-style: italic;">QR Code will appear here</span>
+                </div>
+                
+                <button id="lovense-get-qr" class="menu_button">
+                    <i class="fa-solid fa-qrcode"></i> Generate QR Code
+                </button>
+
+                <hr>
+                <div class="header_label">Manual Test</div>
+                <div style="display: flex; gap: 5px;">
+                    <button id="lovense-low" class="menu_button">Low</button>
+                    <button id="lovense-med" class="menu_button">Med</button>
+                    <button id="lovense-high" class="menu_button">High</button>
+                    <button id="lovense-stop" class="menu_button">Stop</button>
+                </div>
+                 <hr>
+                <label>Trigger Keywords (comma separated)</label>
+                <textarea id="lovense-keywords" class="text_pole" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+</div>

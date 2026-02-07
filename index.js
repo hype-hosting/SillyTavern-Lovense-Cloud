@@ -3,9 +3,12 @@ import {
     saveSettingsDebounced,
     eventSource,
     event_types,
-} from "../../extensions.js"; // <--- Note the correct double dot path
+} from "../../extensions.js";
 
 const extensionName = "lovense-cloud";
+
+// 1. ROBUST SETTINGS MERGE
+// This fixes the issue where old settings lack new properties (like keywords)
 const defaultSettings = {
     isEnabled: true,
     devToken: "",
@@ -14,7 +17,8 @@ const defaultSettings = {
     keywords: "shiver,shake,throb,pulse",
 };
 
-let settings = extension_settings[extensionName] || defaultSettings;
+// Merge defaults with saved settings to ensure no properties are undefined
+let settings = Object.assign({}, defaultSettings, extension_settings[extensionName]);
 
 if (!settings.uid) {
     settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
@@ -107,90 +111,102 @@ function onMessageReceived(data) {
         return; 
     }
 
-    // Keywords
-    const keywords = settings.keywords.split(",").map(s => s.trim());
+    // Keywords (Safe Split)
+    const kwString = settings.keywords || ""; 
+    const keywords = kwString.split(",").map(s => s.trim());
+    
     for (const word of keywords) {
-        if (text.includes(word)) {
+        if (word && text.includes(word)) {
             sendCommand(10, 3);
             break; 
         }
     }
 }
 
-// --- UI CONSTRUCTION (ROBUST VERSION) ---
+// --- UI CONSTRUCTION ---
 
 function addSettingsUI() {
-    // 1. Check if the container exists
-    const container = $("#extensions_settings");
-    if (container.length === 0) {
-        console.log("[Lovense Cloud] UI not ready yet. Retrying in 500ms...");
-        setTimeout(addSettingsUI, 500); // Retry Loop
-        return;
-    }
+    try {
+        // Target the standard extensions container
+        const container = $("#extensions_settings");
+        
+        // If container isn't ready, wait and retry
+        if (container.length === 0) {
+            console.warn("[Lovense] #extensions_settings not found yet. Retrying...");
+            setTimeout(addSettingsUI, 500); 
+            return;
+        }
 
-    // 2. Check if we already injected (to prevent duplicates)
-    if (container.find(".lovense-cloud-settings").length > 0) return;
+        // Prevent duplicates
+        if (container.find(".lovense-cloud-settings").length > 0) return;
 
-    const html = `
-    <div class="lovense-cloud-settings">
-        <div class="inline-drawer">
-            <div class="inline-drawer-toggle inline-drawer-header">
-                <b>Lovense Cloud</b>
-                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-            </div>
-            <div class="inline-drawer-content" style="display:none;">
-                <div class="flex-container">
-                    <label class="checkbox_label">
-                        <input type="checkbox" id="lovense-enable" ${settings.isEnabled ? "checked" : ""}>
-                        Enable functionality
-                    </label>
-                    <hr>
-                    <label>
-                        Developer Token 
-                        <a href="https://www.lovense.com/user/developer/info" target="_blank" style="float:right;">Get Token</a>
-                    </label>
-                    <input type="password" id="lovense-token" class="text_pole" value="${settings.devToken}" placeholder="Paste token here">
-                    
-                    <div id="lovense-qr-container" style="text-align: center; margin: 15px 0; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); border-radius: 5px;">
-                        <span style="opacity: 0.5; font-style: italic;">QR Code will appear here</span>
+        console.log("[Lovense] Injecting UI now...");
+
+        const html = `
+        <div class="lovense-cloud-settings">
+            <div class="inline-drawer">
+                <div class="inline-drawer-toggle inline-drawer-header">
+                    <b>Lovense Cloud</b>
+                    <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+                </div>
+                <div class="inline-drawer-content" style="display:none;">
+                    <div class="flex-container">
+                        <label class="checkbox_label">
+                            <input type="checkbox" id="lovense-enable" ${settings.isEnabled ? "checked" : ""}>
+                            Enable functionality
+                        </label>
+                        <hr>
+                        <label>
+                            Developer Token 
+                            <a href="https://www.lovense.com/user/developer/info" target="_blank" style="float:right;">Get Token</a>
+                        </label>
+                        <input type="password" id="lovense-token" class="text_pole" value="${settings.devToken || ''}" placeholder="Paste token here">
+                        
+                        <div id="lovense-qr-container" style="text-align: center; margin: 15px 0; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); border-radius: 5px;">
+                            <span style="opacity: 0.5; font-style: italic;">QR Code will appear here</span>
+                        </div>
+                        
+                        <button id="lovense-get-qr" class="menu_button">
+                            <i class="fa-solid fa-qrcode"></i> Generate QR Code
+                        </button>
+
+                        <hr>
+                        <div class="header_label">Manual Test</div>
+                        <div style="display: flex; gap: 5px;">
+                            <button id="lovense-low" class="menu_button">Low</button>
+                            <button id="lovense-med" class="menu_button">Med</button>
+                            <button id="lovense-high" class="menu_button">High</button>
+                            <button id="lovense-stop" class="menu_button">Stop</button>
+                        </div>
+                        <hr>
+                        <label>Trigger Keywords (comma separated)</label>
+                        <textarea id="lovense-keywords" class="text_pole" rows="2">${settings.keywords || ''}</textarea>
                     </div>
-                    
-                    <button id="lovense-get-qr" class="menu_button">
-                        <i class="fa-solid fa-qrcode"></i> Generate QR Code
-                    </button>
-
-                    <hr>
-                    <div class="header_label">Manual Test</div>
-                    <div style="display: flex; gap: 5px;">
-                        <button id="lovense-low" class="menu_button">Low</button>
-                        <button id="lovense-med" class="menu_button">Med</button>
-                        <button id="lovense-high" class="menu_button">High</button>
-                        <button id="lovense-stop" class="menu_button">Stop</button>
-                    </div>
-                     <hr>
-                    <label>Trigger Keywords (comma separated)</label>
-                    <textarea id="lovense-keywords" class="text_pole" rows="2">${settings.keywords}</textarea>
                 </div>
             </div>
         </div>
-    </div>
-    `;
+        `;
 
-    container.append(html);
+        container.append(html);
 
-    // Bindings
-    $("#lovense-enable").on("change", (e) => { settings.isEnabled = e.target.checked; saveSettings(); });
-    $("#lovense-token").on("input", (e) => { settings.devToken = e.target.value; saveSettings(); });
-    $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
-    
-    $("#lovense-get-qr").on("click", getQrCode);
-    
-    $("#lovense-low").on("click", () => sendCommand(5));
-    $("#lovense-med").on("click", () => sendCommand(10));
-    $("#lovense-high").on("click", () => sendCommand(20));
-    $("#lovense-stop").on("click", () => sendCommand(0));
-    
-    console.log("[Lovense Cloud] UI Injected Successfully.");
+        // Bindings
+        $("#lovense-enable").on("change", (e) => { settings.isEnabled = e.target.checked; saveSettings(); });
+        $("#lovense-token").on("input", (e) => { settings.devToken = e.target.value; saveSettings(); });
+        $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
+        
+        $("#lovense-get-qr").on("click", getQrCode);
+        
+        $("#lovense-low").on("click", () => sendCommand(5));
+        $("#lovense-med").on("click", () => sendCommand(10));
+        $("#lovense-high").on("click", () => sendCommand(20));
+        $("#lovense-stop").on("click", () => sendCommand(0));
+        
+        console.log("[Lovense] UI setup complete.");
+        
+    } catch (err) {
+        console.error("[Lovense] Fatal UI Error:", err);
+        toastr.error("Lovense Extension crashed during UI load. Check console.");
+    }
 }
 
 function saveSettings() {
@@ -200,7 +216,7 @@ function saveSettings() {
 
 // --- INITIALIZATION ---
 jQuery(async () => {
-    // Start the UI injection loop
+    console.log("[Lovense] Init started...");
     addSettingsUI();
     eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
 });

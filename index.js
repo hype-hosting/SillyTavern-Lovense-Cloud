@@ -1,12 +1,11 @@
-// 1. CORRECT IMPORT PATH (Three levels up for 'third-party' folder)
+// 1. CORRECT IMPORT PATH
+// We only import 'extension_settings' now.
 import {
-    extension_settings,
-    saveSettingsDebounced,
+    extension_settings
 } from "../../../extensions.js";
 
 // 2. DEFINE NAME & PATH
 const extensionName = "lovense-cloud";
-// This path must match where your folder actually is
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; 
 
 // 3. DEFAULT SETTINGS
@@ -103,8 +102,6 @@ async function sendCommand(strength, timeSec = 0) {
 function onMessageReceived(event) {
     if (!settings.isEnabled) return;
     
-    // In newer ST versions, the event might be a CustomEvent where data is in 'detail'
-    // or it might be passed directly. We check both.
     const data = event.detail ? event.detail : event;
     const text = data.content?.toLowerCase() || "";
     
@@ -133,10 +130,7 @@ async function loadSettings() {
     console.log("[Lovense] Loading UI from:", `${extensionFolderPath}/settings.html`);
     
     try {
-        // Load the HTML content
         const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
-        
-        // Inject into the settings menu
         $("#extensions_settings").append(settingsHtml);
 
         // Populate Fields
@@ -150,7 +144,6 @@ async function loadSettings() {
         $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
         
         $("#lovense-get-qr").on("click", getQrCode);
-        
         $("#lovense-low").on("click", () => sendCommand(5));
         $("#lovense-med").on("click", () => sendCommand(10));
         $("#lovense-high").on("click", () => sendCommand(20));
@@ -165,20 +158,24 @@ async function loadSettings() {
 }
 
 function saveSettings() {
+    // We update the master settings object directly.
     extension_settings[extensionName] = settings;
-    saveSettingsDebounced();
+    
+    // We try to call the global save function if it exists on the window
+    // (This is the fallback for when it's not exported)
+    if (window.saveSettingsDebounced) {
+        window.saveSettingsDebounced();
+    } else {
+        console.warn("[Lovense] Could not find saveSettingsDebounced function.");
+    }
 }
 
 // --- INITIALIZATION ---
 
 jQuery(async () => {
-    // 1. Load the UI
     await loadSettings();
     
-    // 2. Hook into the Global Event Source
-    // We check if it exists globally first to avoid the import error
     if (window.eventSource) {
-        // We use the string "MESSAGE_RECEIVED" directly to avoid import issues
         window.eventSource.on("MESSAGE_RECEIVED", onMessageReceived);
         console.log("[Lovense] Automation hooked.");
     } else {

@@ -5,38 +5,59 @@
             <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
         <div class="inline-drawer-content" style="display:none;">
-            <div class="flex-container">
-                <label class="checkbox_label">
-                    <input type="checkbox" id="lovense-enable">
-                    Enable functionality
-                </label>
-                <hr>
-                <label>
-                    Developer Token 
-                    <a href="https://www.lovense.com/user/developer/info" target="_blank" style="float:right;">Get Token</a>
-                </label>
-                <input type="password" id="lovense-token" class="text_pole" placeholder="Paste token here">
+            
+            <label class="checkbox_label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
+                <input type="checkbox" id="lovense-enable" class="checkbox">
+                <span style="font-weight: bold;">Enable Functionality</span>
+            </label>
+
+            <hr style="margin: 10px 0; opacity: 0.2;">
+
+            <div style="margin-bottom: 16px;">
+                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-link"></i> Connection
+                </h4>
                 
-                <div id="lovense-qr-container" style="text-align: center; margin: 15px 0; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); border-radius: 5px;">
-                    <span style="opacity: 0.5; font-style: italic;">QR Code will appear here</span>
+                <label style="display: block; font-size: 0.8em; margin-bottom: 3px; opacity: 0.8;">
+                    Developer Token <a href="https://www.lovense.com/user/developer/info" target="_blank" style="float:right; opacity: 0.8;">Get Token</a>
+                </label>
+                <input type="password" id="lovense-token" class="text_pole" placeholder="Paste Lovense Dev Token here" style="width: 100%; margin-bottom: 10px;">
+
+                <div id="lovense-qr-container" style="text-align: center; margin: 10px 0; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.15); border-radius: 6px; padding: 10px;">
+                    <span style="opacity: 0.5; font-style: italic; font-size: 0.9em;">QR Code will appear here</span>
                 </div>
-                
-                <button id="lovense-get-qr" class="menu_button">
+
+                <button id="lovense-get-qr" class="menu_button" style="width: 100%;">
                     <i class="fa-solid fa-qrcode"></i> Generate QR Code
                 </button>
+            </div>
 
-                <hr>
-                <div class="header_label">Manual Test</div>
-                <div style="display: flex; gap: 5px;">
+            <hr style="margin: 10px 0; opacity: 0.2;">
+
+            <div style="margin-bottom: 16px;">
+                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-gamepad"></i> Manual Test
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
                     <button id="lovense-low" class="menu_button">Low</button>
                     <button id="lovense-med" class="menu_button">Med</button>
                     <button id="lovense-high" class="menu_button">High</button>
-                    <button id="lovense-stop" class="menu_button">Stop</button>
+                    <button id="lovense-stop" class="menu_button" style="background-color: rgba(200, 50, 50, 0.3);">Stop</button>
                 </div>
-                 <hr>
-                <label>Trigger Keywords (comma separated)</label>
-                <textarea id="lovense-keywords" class="text_pole" rows="2"></textarea>
             </div>
+
+            <hr style="margin: 10px 0; opacity: 0.2;">
+
+            <div>
+                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-bolt"></i> Triggers
+                </h4>
+                <label style="display: block; font-size: 0.8em; margin-bottom: 3px; opacity: 0.8;">
+                    Keywords (comma separated)
+                </label>
+                <textarea id="lovense-keywords" class="text_pole" rows="2" style="width: 100%; font-size: 0.9em;"></textarea>
+            </div>
+
         </div>
     </div>
 </div>

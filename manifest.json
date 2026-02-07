@@ -1,7 +1,7 @@
 {
-    "display_name": "HypeHub Lovense Control",
+    "display_name": "Lovense Cloud",
     "requires": [],
-    "author": "Hyperion",
+    "author": "Timeless Tavern",
     "version": "1.0.0",
     "description": "Client-side Lovense control via Cloud API.",
     "icon": "fa-solid fa-satellite-dish",

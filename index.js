@@ -3,7 +3,7 @@ import {
     saveSettingsDebounced,
     eventSource,
     event_types,
-} from "../../../extensions.js";
+} from "../../extensions.js";
 
 const extensionName = "lovense-cloud";
 const defaultSettings = {

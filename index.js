@@ -3,21 +3,19 @@ import {
     saveSettingsDebounced,
     eventSource,
     event_types,
-} from "../../extensions.js";
+} from "../../extensions.js"; // <--- Note the correct double dot path
 
 const extensionName = "lovense-cloud";
 const defaultSettings = {
     isEnabled: true,
-    devToken: "",        // User must provide this
-    uid: "",             // We will auto-generate this
-    defaultTime: 5,      // How long to vibrate by default (seconds)
-    keywords: "shiver,shake,throb,pulse", // Simple trigger words
+    devToken: "",
+    uid: "",
+    defaultTime: 5,
+    keywords: "shiver,shake,throb,pulse",
 };
 
 let settings = extension_settings[extensionName] || defaultSettings;
 
-// 1. GENERATE PERSISTENT UID
-// This ID identifies this specific browser to the Lovense Cloud.
 if (!settings.uid) {
     settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
     saveSettings();
@@ -50,7 +48,6 @@ async function getQrCode() {
         const data = await response.json();
 
         if (data.result === true) {
-            // Success! Render the QR Code.
             $("#lovense-qr-container").html(`
                 <img src="${data.message}" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--smart-theme-body-color);">
                 <div style="margin-top:5px; font-size:0.8em; opacity:0.7;">
@@ -72,17 +69,13 @@ async function getQrCode() {
 async function sendCommand(strength, timeSec = 0) {
     if (!settings.isEnabled || !settings.devToken) return;
 
-    // Strength is 0-20.
-    // If strength is 0, we treat it as a STOP command.
     const action = strength === 0 ? "Stop" : `Vibrate:${strength}`;
-    
-    // API Payload
     const payload = {
         token: settings.devToken,
         uid: settings.uid,
         command: "Function",
         action: action,
-        timeSec: timeSec, // 0 means infinite (until stopped)
+        timeSec: timeSec,
         apiVer: 1
     };
 
@@ -99,42 +92,45 @@ async function sendCommand(strength, timeSec = 0) {
     }
 }
 
-
 // --- AUTOMATION LOGIC ---
 
 function onMessageReceived(data) {
     if (!settings.isEnabled) return;
-
     const text = data.content?.toLowerCase() || "";
     
-    // 1. Explicit Control via Tags: [vibe:10] or [vibe:20:5] (strength:time)
+    // Explicit Tags
     const explicitMatch = text.match(/\[vibe:\s*(\d+)(?::(\d+))?\]/i);
-    
     if (explicitMatch) {
         const strength = parseInt(explicitMatch[1]);
         const time = explicitMatch[2] ? parseInt(explicitMatch[2]) : settings.defaultTime;
-        
-        console.log(`[Lovense] Tag found. Strength: ${strength}, Time: ${time}`);
         sendCommand(strength, time);
-        return; // Prioritize explicit tags over keywords
+        return; 
     }
 
-    // 2. Keyword Matching
+    // Keywords
     const keywords = settings.keywords.split(",").map(s => s.trim());
     for (const word of keywords) {
         if (text.includes(word)) {
-            console.log(`[Lovense] Keyword found: ${word}`);
-            // Default to medium strength (10) for 3 seconds
             sendCommand(10, 3);
-            break; // Trigger only once per message
+            break; 
         }
     }
 }
 
-
-// --- UI CONSTRUCTION ---
+// --- UI CONSTRUCTION (ROBUST VERSION) ---
 
 function addSettingsUI() {
+    // 1. Check if the container exists
+    const container = $("#extensions_settings");
+    if (container.length === 0) {
+        console.log("[Lovense Cloud] UI not ready yet. Retrying in 500ms...");
+        setTimeout(addSettingsUI, 500); // Retry Loop
+        return;
+    }
+
+    // 2. Check if we already injected (to prevent duplicates)
+    if (container.find(".lovense-cloud-settings").length > 0) return;
+
     const html = `
     <div class="lovense-cloud-settings">
         <div class="inline-drawer">
@@ -148,9 +144,7 @@ function addSettingsUI() {
                         <input type="checkbox" id="lovense-enable" ${settings.isEnabled ? "checked" : ""}>
                         Enable functionality
                     </label>
-                    
                     <hr>
-                    
                     <label>
                         Developer Token 
                         <a href="https://www.lovense.com/user/developer/info" target="_blank" style="float:right;">Get Token</a>
@@ -166,7 +160,6 @@ function addSettingsUI() {
                     </button>
 
                     <hr>
-                    
                     <div class="header_label">Manual Test</div>
                     <div style="display: flex; gap: 5px;">
                         <button id="lovense-low" class="menu_button">Low</button>
@@ -174,9 +167,7 @@ function addSettingsUI() {
                         <button id="lovense-high" class="menu_button">High</button>
                         <button id="lovense-stop" class="menu_button">Stop</button>
                     </div>
-
                      <hr>
-                    
                     <label>Trigger Keywords (comma separated)</label>
                     <textarea id="lovense-keywords" class="text_pole" rows="2">${settings.keywords}</textarea>
                 </div>
@@ -185,7 +176,7 @@ function addSettingsUI() {
     </div>
     `;
 
-    $("#extensions_settings").append(html);
+    container.append(html);
 
     // Bindings
     $("#lovense-enable").on("change", (e) => { settings.isEnabled = e.target.checked; saveSettings(); });
@@ -198,6 +189,8 @@ function addSettingsUI() {
     $("#lovense-med").on("click", () => sendCommand(10));
     $("#lovense-high").on("click", () => sendCommand(20));
     $("#lovense-stop").on("click", () => sendCommand(0));
+    
+    console.log("[Lovense Cloud] UI Injected Successfully.");
 }
 
 function saveSettings() {
@@ -207,7 +200,7 @@ function saveSettings() {
 
 // --- INITIALIZATION ---
 jQuery(async () => {
+    // Start the UI injection loop
     addSettingsUI();
     eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
-    console.log("[Lovense Cloud] Loaded.");
 });

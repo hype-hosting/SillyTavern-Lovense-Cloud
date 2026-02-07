@@ -1,0 +1,10 @@
+{
+    "display_name": "HypeHub Lovense Control",
+    "requires": [],
+    "author": "Hyperion",
+    "version": "1.0.0",
+    "description": "Client-side Lovense control via Cloud API.",
+    "icon": "fa-solid fa-satellite-dish",
+    "js": "index.js",
+    "css": "style.css"
+}

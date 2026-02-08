@@ -42,7 +42,7 @@ async function getQrCode() {
         v: 2
     };
 
-    $("#lovense-qr-container").html('<i class="fa-solid fa-spinner fa-spin"></i> Loading QR...');
+    $("#lovense-qr-container").html('<i class="fa-solid fa-spinner fa-spin"></i> Contacting Lovense...');
 
     try {
         const response = await fetch(url, {
@@ -51,15 +51,31 @@ async function getQrCode() {
             body: JSON.stringify(payload)
         });
         const data = await response.json();
+        
+        // DEBUG: See what the server actually sent
+        console.log("[Lovense Debug] API Response:", data);
 
         if (data.result === true) {
-            $("#lovense-qr-container").html(`
-                <img src="${data.message}" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--smart-theme-body-color);">
-                <div style="margin-top:5px; font-size:0.8em; opacity:0.7;">
-                    Scan with <b>Lovense Remote App</b>
-                </div>
-            `);
-            toastr.success("QR Code Generated. Scan it now!");
+            // FIX: Check if the message is a URL (Image) or just Text
+            if (data.message && data.message.startsWith("http")) {
+                $("#lovense-qr-container").html(`
+                    <img src="${data.message}" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--smart-theme-body-color);">
+                    <div style="margin-top:5px; font-size:0.8em; opacity:0.7;">
+                        Scan with <b>Lovense Remote App</b>
+                    </div>
+                `);
+                toastr.success("QR Code received.");
+            } else {
+                // If it's not a URL, it's a success message (e.g. "Success" or "Already connected")
+                $("#lovense-qr-container").html(`
+                    <div style="padding: 20px; text-align: center;">
+                        <i class="fa-solid fa-check-circle" style="font-size: 3em; color: #4CAF50; margin-bottom: 10px;"></i><br>
+                        <b>Server says: ${data.message}</b><br>
+                        <span style="font-size: 0.8em; opacity: 0.7;">Try the Test Buttons below.</span>
+                    </div>
+                `);
+                toastr.success("Lovense returned: " + data.message);
+            }
         } else {
             $("#lovense-qr-container").html("Error loading QR.");
             toastr.error("Lovense Error: " + data.message);
@@ -158,15 +174,16 @@ async function loadSettings() {
 }
 
 function saveSettings() {
-    // We update the master settings object directly.
+    // Update the master settings object
     extension_settings[extensionName] = settings;
     
-    // We try to call the global save function if it exists on the window
-    // (This is the fallback for when it's not exported)
+    // Try to find the correct save function in the global scope
     if (window.saveSettingsDebounced) {
         window.saveSettingsDebounced();
+    } else if (window.saveExtensionSettings) {
+        window.saveExtensionSettings();
     } else {
-        console.warn("[Lovense] Could not find saveSettingsDebounced function.");
+        console.warn("[Lovense] Could not find a way to save settings!");
     }
 }
 

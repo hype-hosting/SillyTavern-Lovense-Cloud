@@ -34,12 +34,8 @@ async function getQrCode() {
         return;
     }
 
-    // --- THE FIX: FORCE A FRESH SESSION ---
-    // We generate a new random User ID every time you request a QR code.
-    // This forces the Lovense server to give us a brand new linking image.
+    // Generate new session ID
     settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
-    
-    // Save this new ID so we use it for future commands
     saveSettings(); 
     console.log("[Lovense] Generated new UID:", settings.uid);
 
@@ -64,28 +60,28 @@ async function getQrCode() {
         console.log("[Lovense Debug] API Response:", data);
 
         if (data.result === true) {
-            // Check if we got a URL (Secure or non-secure)
-            if (data.message && (data.message.startsWith("http") || data.message.startsWith("https"))) {
+            // FIX: Look inside data.qr OR data.qrcode OR message
+            // The API puts the URL in 'data.qr' for v2 requests
+            const qrUrl = (data.data && data.data.qr) || (data.data && data.data.qrcode) || data.message;
+
+            if (qrUrl && qrUrl.startsWith("http")) {
                 $("#lovense-qr-container").html(`
-                    <img src="${data.message}" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--smart-theme-body-color);">
+                    <img src="${qrUrl}" style="width: 200px; height: 200px; border-radius: 8px; border: 2px solid var(--smart-theme-body-color);">
                     <div style="margin-top:5px; font-size:0.8em; opacity:0.7;">
                         Scan with <b>Lovense Remote App</b>
                     </div>
                 `);
                 toastr.success("New QR Code received.");
             } else {
-                // If we STILL get just "Success" even with a new UID, something else is up.
+                // Fallback if we still can't find a URL
                 $("#lovense-qr-container").html(`
                     <div style="padding: 20px; text-align: center;">
-                        <i class="fa-solid fa-check-circle" style="font-size: 3em; color: #4CAF50; margin-bottom: 10px;"></i><br>
-                        <b>Server says: ${data.message}</b><br>
-                        <span style="font-size: 0.8em; opacity: 0.7;">
-                           If no image appears, check your 
-                           <a href="https://www.lovense.com/user/developer/info" target="_blank">Developer Token</a>.
-                        </span>
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 3em; color: orange; margin-bottom: 10px;"></i><br>
+                        <b>Parsed 'Success' but found no URL.</b><br>
+                        <span style="font-size: 0.8em; opacity: 0.7;">Check Console (F12) to see the raw data object.</span>
                     </div>
                 `);
-                toastr.success("Lovense returned: " + data.message);
+                toastr.warning("Lovense returned Success but no Image.");
             }
         } else {
             $("#lovense-qr-container").html("Error loading QR.");

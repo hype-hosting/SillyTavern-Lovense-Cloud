@@ -12,7 +12,9 @@ Unlike other solutions that require local network bridges (which fail on hosted/
 * **Zero Server Config:** No need to open ports or run local servers.
 * **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
 * **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
-* **Explicit AI Control:** Give the AI precise control using hidden tags like `[vibe:10]`.
+* **Full Toy Support:** Vibrate, Rotate, and Pump — supports the entire Lovense lineup.
+* **Explicit AI Control:** Give the AI precise control using tags like `[vibe:10]`, `[rotate:15]`, `[pump:2]`.
+* **Combined Commands:** Multiple tags in one message are sent as a single combined action.
 * **Manual Control:** Test vibrations directly from the extension UI.
 
 ---
@@ -80,24 +82,34 @@ There are two ways the AI can control your toy:
 ### 1. Keyword Triggers (Passive)
 In the extension settings, you can define a list of words (comma-separated).
 * **Default:** `shiver, shake, throb, pulse`
-* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength for 3 seconds.
+* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength (10) for 10 seconds.
 
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
 
 > **[System Note:]**
 > You have remote control over the user's Lovense toy.
-> To activate it, include the tag `[vibe:strength]` or `[vibe:strength:seconds]` in your response.
-> * `strength` is a number from 0-20.
-> * `seconds` is how long it lasts (default is 5).
+> To activate it, include one or more of the following tags in your response:
+>
+> **Vibrate:** `[vibe:strength]` or `[vibe:strength:seconds]` — strength 0-20
+> **Rotate:** `[rotate:strength]` or `[rotate:strength:seconds]` — strength 0-20
+> **Pump:** `[pump:strength]` or `[pump:strength:seconds]` — strength 0-3
+>
+> * `strength` controls intensity. `seconds` is how long it lasts (default is 5).
+> * Setting strength to 0 stops the toy: `[vibe:0]`
+> * You can combine tags in a single message for simultaneous actions.
 >
 > **Examples:**
-> * `[vibe:5]` -> Gentle vibration.
-> * `[vibe:20:10]` -> Maximum power for 10 seconds.
-> * `[vibe:0]` -> Stop vibration immediately.
+> * `[vibe:5]` -> Gentle vibration for 5 seconds.
+> * `[vibe:20:10]` -> Maximum vibration for 10 seconds.
+> * `[rotate:15:8]` -> Strong rotation for 8 seconds.
+> * `[pump:2:5]` -> Medium pump for 5 seconds.
+> * `[vibe:10][rotate:10]` -> Vibrate and rotate simultaneously.
+> * `[vibe:0]` -> Stop all toy actions immediately.
 >
 > **Usage:**
 > "I'm going to tease you now. [vibe:5] Do you feel that?"
+> "Let me turn it up... [vibe:15][rotate:10:8] How about now?"
 
 ---
 
@@ -111,6 +123,8 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 * **Toy doesn't vibrate after scanning:**
     * Make sure the **Lovense Remote App** is open and running in the foreground on your phone.
     * Ensure the toy icon in the app is green (connected).
+* **Rotate/Pump commands don't seem to work:**
+    * Not all Lovense toys support every action. Vibrate works on all toys, Rotate requires a rotating toy (e.g., Nora), and Pump requires an air pump toy (e.g., Max). Unsupported actions are silently ignored by the toy.
 * **Mixed Content Warnings:**
     * This extension uses the official Cloud API (`https://api.lovense.com`), so it should **not** trigger mixed content warnings (HTTP vs HTTPS), making it safe for hosted instances.
 

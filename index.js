@@ -98,10 +98,11 @@ async function getQrCode() {
     }
 }
 
-async function sendCommand(strength, timeSec = 0) {
+// action: a pre-built action string like "Vibrate:10", "Rotate:15", "Pump:2",
+//         "Vibrate:10,Rotate:15", or "Stop".
+async function sendCommand(action, timeSec = 0) {
     if (!settings.isEnabled || !DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") return;
 
-    const action = strength === 0 ? "Stop" : `Vibrate:${strength}`;
     const payload = {
         token: DEV_TOKEN,
         uid: settings.uid,
@@ -129,6 +130,17 @@ async function sendCommand(strength, timeSec = 0) {
 
 // --- AUTOMATION ---
 
+// Tag-to-action mapping. Strength ranges: Vibrate 0-20, Rotate 0-20, Pump 0-3.
+const TAG_MAP = {
+    vibe:   { action: "Vibrate", max: 20 },
+    vibrate:{ action: "Vibrate", max: 20 },
+    rotate: { action: "Rotate",  max: 20 },
+    pump:   { action: "Pump",    max: 3  },
+};
+
+// Matches [vibe:10], [rotate:15:8], [pump:2], etc.
+const TAG_REGEX = /\[(vibe|vibrate|rotate|pump):\s*(\d+)(?::(\d+))?\]/gi;
+
 function onMessageReceived(messageIndex) {
     if (!settings.isEnabled) return;
 
@@ -139,20 +151,35 @@ function onMessageReceived(messageIndex) {
 
         const text = (message.mes || "").toLowerCase();
 
-        // 1. Explicit Tags: [vibe:10] or [vibe:10:5]
-        const explicitMatch = text.match(/\[vibe:\s*(\d+)(?::(\d+))?\]/i);
-        if (explicitMatch) {
-            const strength = parseInt(explicitMatch[1]);
-            const time = explicitMatch[2] ? parseInt(explicitMatch[2]) : settings.defaultTime;
-            sendCommand(strength, time);
+        // 1. Explicit Tags: [vibe:10], [rotate:15:8], [pump:2], etc.
+        //    Multiple tags in one message are combined into a single command.
+        const actions = [];
+        let maxTime = 0;
+        let match;
+        TAG_REGEX.lastIndex = 0;
+        while ((match = TAG_REGEX.exec(text)) !== null) {
+            const tag = TAG_MAP[match[1]];
+            const strength = Math.min(parseInt(match[2]), tag.max);
+            const time = match[3] ? parseInt(match[3]) : settings.defaultTime;
+            if (time > maxTime) maxTime = time;
+
+            if (strength === 0) {
+                sendCommand("Stop");
+                return;
+            }
+            actions.push(`${tag.action}:${strength}`);
+        }
+
+        if (actions.length > 0) {
+            sendCommand(actions.join(","), maxTime);
             return;
         }
 
-        // 2. Keywords
+        // 2. Keywords — default: Vibrate at 10 for 10 seconds
         const keywords = (settings.keywords || "").split(",").map(s => s.trim());
         for (const word of keywords) {
             if (word && text.includes(word)) {
-                sendCommand(10, 3);
+                sendCommand("Vibrate:10", 10);
                 break;
             }
         }
@@ -179,10 +206,10 @@ async function loadSettings() {
         $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
         
         $("#lovense-get-qr").on("click", getQrCode);
-        $("#lovense-low").on("click", () => sendCommand(5, settings.defaultTime));
-        $("#lovense-med").on("click", () => sendCommand(10, settings.defaultTime));
-        $("#lovense-high").on("click", () => sendCommand(20, settings.defaultTime));
-        $("#lovense-stop").on("click", () => sendCommand(0));
+        $("#lovense-low").on("click", () => sendCommand("Vibrate:5", settings.defaultTime));
+        $("#lovense-med").on("click", () => sendCommand("Vibrate:10", settings.defaultTime));
+        $("#lovense-high").on("click", () => sendCommand("Vibrate:20", settings.defaultTime));
+        $("#lovense-stop").on("click", () => sendCommand("Stop"));
         
         console.log("[Lovense] UI Loaded Successfully.");
 

@@ -1,14 +1,8 @@
-// 1. CORRECT IMPORT PATH
-// We only import 'extension_settings' now.
-import {
-    extension_settings
-} from "../../../extensions.js";
+// No relative imports — use SillyTavern.getContext() for all ST APIs.
 
-// 2. DEFINE NAME & PATH
 const extensionName = "lovense-cloud";
-const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`; 
+const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
-// 3. DEFAULT SETTINGS
 const defaultSettings = {
     isEnabled: true,
     devToken: "",
@@ -17,13 +11,20 @@ const defaultSettings = {
     keywords: "shiver,shake,throb,pulse",
 };
 
-// Merge saved settings with defaults
-let settings = Object.assign({}, defaultSettings, extension_settings[extensionName]);
+// Populated by initSettings() once SillyTavern is ready.
+let settings = {};
 
-// Generate a persistent ID if missing
-if (!settings.uid) {
-    settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
-    saveSettings();
+function initSettings() {
+    const context = SillyTavern.getContext();
+    const extensionSettings = context.extensionSettings;
+    settings = Object.assign({}, defaultSettings, extensionSettings[extensionName]);
+
+    if (!settings.uid) {
+        settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
+    }
+
+    extensionSettings[extensionName] = settings;
+    context.saveSettingsDebounced();
 }
 
 // --- LOVENSE API FUNCTIONS ---
@@ -44,7 +45,8 @@ async function getQrCode() {
         token: settings.devToken,
         uid: settings.uid,
         uname: "SillyTavern User",
-        v: 2
+        utoken: settings.uid,
+        v: 2,
     };
 
     $("#lovense-qr-container").html('<i class="fa-solid fa-spinner fa-spin"></i> Contacting Lovense...');
@@ -104,17 +106,20 @@ async function sendCommand(strength, timeSec = 0) {
         command: "Function",
         action: action,
         timeSec: timeSec,
-        apiVer: 1
+        stopPrevious: 1,
+        apiVer: 1,
     };
 
     console.log(`[Lovense] Sending: ${action} for ${timeSec}s`);
 
     try {
-        await fetch("https://api.lovense.com/api/lan/command", {
+        const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         });
+        const data = await response.json();
+        console.log("[Lovense] Command response:", data);
     } catch (e) {
         console.error("[Lovense] Command Failed:", e);
     }
@@ -122,28 +127,35 @@ async function sendCommand(strength, timeSec = 0) {
 
 // --- AUTOMATION ---
 
-function onMessageReceived(event) {
+function onMessageReceived(messageIndex) {
     if (!settings.isEnabled) return;
-    
-    const data = event.detail ? event.detail : event;
-    const text = data.content?.toLowerCase() || "";
-    
-    // 1. Explicit Tags: [vibe:10]
-    const explicitMatch = text.match(/\[vibe:\s*(\d+)(?::(\d+))?\]/i);
-    if (explicitMatch) {
-        const strength = parseInt(explicitMatch[1]);
-        const time = explicitMatch[2] ? parseInt(explicitMatch[2]) : settings.defaultTime;
-        sendCommand(strength, time);
-        return; 
-    }
 
-    // 2. Keywords
-    const keywords = (settings.keywords || "").split(",").map(s => s.trim());
-    for (const word of keywords) {
-        if (word && text.includes(word)) {
-            sendCommand(10, 3);
-            break; 
+    try {
+        const context = SillyTavern.getContext();
+        const message = context.chat[messageIndex];
+        if (!message) return;
+
+        const text = (message.mes || "").toLowerCase();
+
+        // 1. Explicit Tags: [vibe:10] or [vibe:10:5]
+        const explicitMatch = text.match(/\[vibe:\s*(\d+)(?::(\d+))?\]/i);
+        if (explicitMatch) {
+            const strength = parseInt(explicitMatch[1]);
+            const time = explicitMatch[2] ? parseInt(explicitMatch[2]) : settings.defaultTime;
+            sendCommand(strength, time);
+            return;
         }
+
+        // 2. Keywords
+        const keywords = (settings.keywords || "").split(",").map(s => s.trim());
+        for (const word of keywords) {
+            if (word && text.includes(word)) {
+                sendCommand(10, 3);
+                break;
+            }
+        }
+    } catch (e) {
+        console.error("[Lovense] Error processing message:", e);
     }
 }
 
@@ -167,9 +179,9 @@ async function loadSettings() {
         $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
         
         $("#lovense-get-qr").on("click", getQrCode);
-        $("#lovense-low").on("click", () => sendCommand(5));
-        $("#lovense-med").on("click", () => sendCommand(10));
-        $("#lovense-high").on("click", () => sendCommand(20));
+        $("#lovense-low").on("click", () => sendCommand(5, settings.defaultTime));
+        $("#lovense-med").on("click", () => sendCommand(10, settings.defaultTime));
+        $("#lovense-high").on("click", () => sendCommand(20, settings.defaultTime));
         $("#lovense-stop").on("click", () => sendCommand(0));
         
         console.log("[Lovense] UI Loaded Successfully.");
@@ -181,28 +193,23 @@ async function loadSettings() {
 }
 
 function saveSettings() {
-    // Update the master settings object
-    extension_settings[extensionName] = settings;
-    
-    // Try to find the correct save function in the global scope
-    if (window.saveSettingsDebounced) {
-        window.saveSettingsDebounced();
-    } else if (window.saveExtensionSettings) {
-        window.saveExtensionSettings();
-    } else {
-        console.warn("[Lovense] Could not find a way to save settings!");
-    }
+    const context = SillyTavern.getContext();
+    context.extensionSettings[extensionName] = settings;
+    context.saveSettingsDebounced();
 }
 
 // --- INITIALIZATION ---
 
 jQuery(async () => {
+    initSettings();
     await loadSettings();
-    
-    if (window.eventSource) {
-        window.eventSource.on("MESSAGE_RECEIVED", onMessageReceived);
+
+    try {
+        const { eventSource, event_types } = SillyTavern.getContext();
+        eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
         console.log("[Lovense] Automation hooked.");
-    } else {
-        console.warn("[Lovense] eventSource not found. Automation disabled.");
+    } catch (e) {
+        console.warn("[Lovense] Could not hook events:", e);
+        console.warn("[Lovense] Automation disabled. Manual controls still available.");
     }
 });

@@ -9,7 +9,7 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const defaultSettings = {
     isEnabled: true,
     uid: "",
-    defaultTime: 5,
+    defaultTime: 10,
     keywords: "shiver,shake,throb,pulse",
 };
 

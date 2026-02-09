@@ -21,42 +21,55 @@ Unlike other solutions that require local network bridges (which fail on hosted/
 
 ### Method 1: Git Clone (Recommended)
 1.  Navigate to your SillyTavern installation folder.
-2.  Open a terminal in `/public/scripts/extensions/`.
+2.  Open a terminal in `/public/scripts/extensions/third-party/`.
 3.  Clone this repository:
     ```bash
-    git clone [https://github.com/your-username/lovense-cloud-st.git](https://github.com/your-username/lovense-cloud-st.git)
+    git clone https://github.com/hype-hosting/HypeHub.git lovense-cloud
     ```
 4.  Restart SillyTavern.
 
 ### Method 2: Manual Install
 1.  Download the ZIP file of this repo.
-2.  Extract the contents into a new folder named `lovense-cloud` inside `/public/scripts/extensions/`.
+2.  Extract the contents into a new folder named `lovense-cloud` inside `/public/scripts/extensions/third-party/`.
 3.  Restart SillyTavern.
 
 ---
 
 ## Setup & Connection
 
-To use the Cloud API, you need a free Developer Token from Lovense.
+### Server Admin Setup
+
+The Lovense Developer Token is configured in the extension source code, not in the UI. This keeps the token hidden from end users.
 
 1.  **Get Your Token:**
     * Go to the [Lovense Developer Dashboard](https://www.lovense.com/user/developer/info).
-    * Log in and create a "Standard Solution" application (Name it whatever you want).
+    * Log in and create a "Standard Solution" application (name it whatever you want).
     * Copy the **Developer Token**.
 
-2.  **Configure Extension:**
-    * Open SillyTavern and go to **Extensions** (Puzzle Piece icon).
-    * Find **Lovense Cloud** and expand the settings.
-    * Paste your **Developer Token** into the token field.
+2.  **Configure the Token:**
+    * Open `index.js` in the extension folder (`/public/scripts/extensions/third-party/lovense-cloud/index.js`).
+    * Find line 4 at the top of the file:
+      ```js
+      const DEV_TOKEN = "PASTE_YOUR_TOKEN_HERE";
+      ```
+    * Replace `PASTE_YOUR_TOKEN_HERE` with your actual token:
+      ```js
+      const DEV_TOKEN = "your-actual-token-here";
+      ```
+    * Save the file and restart SillyTavern.
+
+### User Setup
 
 3.  **Connect Toy:**
-    * Click the **Generate QR Code** button in the extension.
+    * Open SillyTavern and go to **Extensions** (Puzzle Piece icon).
+    * Find **Lovense Cloud** and expand the settings.
+    * Click the **Generate QR Code** button.
     * Open the **Lovense Remote App** (Pink Icon) on your phone.
     * Tap the `+` or "Scan" button and scan the QR code on your screen.
     * *Note: Ensure your toy is already connected to the app via Bluetooth.*
 
 4.  **Test:**
-    * Click the **"Med"** or **"Pulse"** button in the extension. If your toy vibrates, you are ready to go!
+    * Click the **Low**, **Med**, or **High** button in the extension. If your toy vibrates, you are ready to go!
 
 ---
 
@@ -90,14 +103,24 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 
 ## Troubleshooting
 
+* **"Developer Token not configured" error:**
+    * The server admin has not set the token in `index.js`. See **Server Admin Setup** above.
 * **"Network Error" or QR Code doesn't load:**
-    * Verify your Developer Token is correct and has no extra spaces.
+    * Ask the server admin to verify the Developer Token is correct and has no extra spaces.
     * Ensure you have an internet connection.
 * **Toy doesn't vibrate after scanning:**
     * Make sure the **Lovense Remote App** is open and running in the foreground on your phone.
     * Ensure the toy icon in the app is green (connected).
 * **Mixed Content Warnings:**
     * This extension uses the official Cloud API (`https://api.lovense.com`), so it should **not** trigger mixed content warnings (HTTP vs HTTPS), making it safe for hosted instances.
+
+---
+
+## Links
+
+* [Lovense Discount](https://www.lovense.com/r/uo3mr6)
+* [Hype Discord](https://discord.gg/therealhype)
+* [Support Hype](https://ko-fi.com/hype)
 
 ## License
 MIT License. Feel free to fork and modify.

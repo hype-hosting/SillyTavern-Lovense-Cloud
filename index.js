@@ -1,11 +1,13 @@
 // No relative imports — use SillyTavern.getContext() for all ST APIs.
 
+// --- SERVER ADMIN: Paste your Lovense Developer Token below ---
+const DEV_TOKEN = "PASTE_YOUR_TOKEN_HERE";
+
 const extensionName = "lovense-cloud";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
 const defaultSettings = {
     isEnabled: true,
-    devToken: "",
     uid: "",
     defaultTime: 5,
     keywords: "shiver,shake,throb,pulse",
@@ -30,8 +32,8 @@ function initSettings() {
 // --- LOVENSE API FUNCTIONS ---
 
 async function getQrCode() {
-    if (!settings.devToken) {
-        toastr.warning("Please enter your Lovense Developer Token first.");
+    if (!DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") {
+        toastr.error("Lovense Developer Token not configured. Contact the server admin.");
         return;
     }
 
@@ -42,7 +44,7 @@ async function getQrCode() {
 
     const url = "https://api.lovense.com/api/lan/getQrCode";
     const payload = {
-        token: settings.devToken,
+        token: DEV_TOKEN,
         uid: settings.uid,
         uname: "SillyTavern User",
         utoken: settings.uid,
@@ -97,11 +99,11 @@ async function getQrCode() {
 }
 
 async function sendCommand(strength, timeSec = 0) {
-    if (!settings.isEnabled || !settings.devToken) return;
+    if (!settings.isEnabled || !DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") return;
 
     const action = strength === 0 ? "Stop" : `Vibrate:${strength}`;
     const payload = {
-        token: settings.devToken,
+        token: DEV_TOKEN,
         uid: settings.uid,
         command: "Function",
         action: action,
@@ -170,12 +172,10 @@ async function loadSettings() {
 
         // Populate Fields
         $("#lovense-enable").prop("checked", settings.isEnabled);
-        $("#lovense-token").val(settings.devToken);
         $("#lovense-keywords").val(settings.keywords);
 
         // Bind Listeners
         $("#lovense-enable").on("change", (e) => { settings.isEnabled = e.target.checked; saveSettings(); });
-        $("#lovense-token").on("input", (e) => { settings.devToken = e.target.value; saveSettings(); });
         $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
         
         $("#lovense-get-qr").on("click", getQrCode);

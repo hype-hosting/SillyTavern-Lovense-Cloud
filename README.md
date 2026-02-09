@@ -80,7 +80,7 @@ There are two ways the AI can control your toy:
 ### 1. Keyword Triggers (Passive)
 In the extension settings, you can define a list of words (comma-separated).
 * **Default:** `shiver, shake, throb, pulse`
-* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength for 3 seconds.
+* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength for 10 seconds.
 
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
@@ -89,7 +89,7 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 > You have remote control over the user's Lovense toy.
 > To activate it, include the tag `[vibe:strength]` or `[vibe:strength:seconds]` in your response.
 > * `strength` is a number from 0-20.
-> * `seconds` is how long it lasts (default is 5).
+> * `seconds` is how long it lasts (default is 10).
 >
 > **Examples:**
 > * `[vibe:5]` -> Gentle vibration.

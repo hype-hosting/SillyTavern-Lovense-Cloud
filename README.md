@@ -2,14 +2,12 @@
 
 A client-side extension for **SillyTavern** that allows AI characters to control your **Lovense** toys dynamically during chat.
 
-Unlike other solutions that require local network bridges (which fail on hosted/HTTPS instances), this extension uses the **Lovense Cloud API**. This means it works perfectly on:
+This extension uses the **Lovense Cloud API**. This means it works well for:
+* ✅ Cloud-hosted multi-user SillyTavern instances (e.g., Render, HuggingFace, personal VPS)
 * ✅ Locally hosted SillyTavern
-* ✅ Cloud-hosted SillyTavern (e.g., Render, HuggingFace, personal VPS)
-* ✅ Mobile browsers
 
 ## Features
 
-* **Zero Server Config:** No need to open ports or run local servers.
 * **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
 * **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
 * **Full Toy Support:** Vibrate, Rotate, and Pump — supports the entire Lovense lineup.
@@ -26,7 +24,7 @@ Unlike other solutions that require local network bridges (which fail on hosted/
 2.  Open a terminal in `/public/scripts/extensions/third-party/`.
 3.  Clone this repository:
     ```bash
-    git clone https://github.com/hype-hosting/HypeHub.git lovense-cloud
+    git clone https://github.com/hype-hosting/SillyTavern-Lovense-Cloud.git lovense-cloud
     ```
 4.  Restart SillyTavern.
 
@@ -86,26 +84,25 @@ In the extension settings, you can define a list of words (comma-separated).
 
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
+```
+[System Note: You have remote control over the user's Lovense toy. To activate it, include the tag [vibe:strength] or [vibe:strength:seconds] in your response.
 
-> **[System Note:]**
-> You have remote control over the user's Lovense toy.
-> To activate it, include a tag in your response (one per message):
-> * `[vibe:strength]` — Vibrate (strength 0-20)
-> * `[rotate:strength]` — Rotate (strength 0-20)
-> * `[pump:strength]` — Pump (strength 0-3)
-> * The action runs continuously until your next response changes it or the user stops manually.
-> * Use `[vibe:0]` to stop the toy.
->
-> **Examples:**
-> * `[vibe:5]` -> Gentle continuous vibration.
-> * `[vibe:20]` -> Maximum vibration.
-> * `[rotate:15]` -> Strong rotation.
-> * `[pump:2]` -> Medium pump.
-> * `[vibe:0]` -> Stop all toy actions immediately.
->
-> **Usage:**
-> "I'm going to tease you now. [vibe:5] Do you feel that?"
-> "Let me turn it up... [vibe:15]"
+strength is a number from 0-20.
+seconds is how long it lasts (default is 10).
+Examples:
+
+[vibe:5] -> Gentle vibration for 5 seconds.
+[vibe:20:10] -> Maximum vibration for 10 seconds.
+[rotate:15:8] -> Strong rotation for 8 seconds.
+[pump:2:5] -> Medium pump for 5 seconds.
+[vibe:10][rotate:10] -> Vibrate and rotate simultaneously.
+[vibe:0] -> Stop all toy actions immediately.
+
+Enclose commands in `<!-- [command] -->` syntax in-line.
+
+Usage: "I'm going to tease you now. <!-- [vibe:5] --> Do you feel that? Let me turn it up... <!-- [vibe:15][rotate:10:8] --> How about now?"
+]
+```
 
 ---
 
@@ -131,6 +128,10 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 * [Lovense Discount](https://www.lovense.com/r/uo3mr6)
 * [Hype Discord](https://discord.gg/therealhype)
 * [Support Hype](https://ko-fi.com/hype)
+
+## Credit
+
+* Though this extension stands on its own and uses it's own code, it was inspired by the local Lovense extension by [SpicyMarinara](https://spicymarinara.github.io/). Be sure and support their work as well.
 
 ## License
 AGPL-3.0 — See [LICENSE](LICENSE) for details.

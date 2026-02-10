@@ -8,7 +8,6 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 
 ## Features
 
-* **Zero Server Config:** No need to open ports or run local servers.
 * **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
 * **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
 * **Full Toy Support:** Vibrate, Rotate, and Pump — supports the entire Lovense lineup.

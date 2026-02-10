@@ -64,8 +64,6 @@ async function getQrCode() {
         console.log("[Lovense Debug] API Response:", data);
 
         if (data.result === true) {
-            // FIX: Look inside data.qr OR data.qrcode OR message
-            // The API puts the URL in 'data.qr' for v2 requests
             const qrUrl = (data.data && data.data.qr) || (data.data && data.data.qrcode) || data.message;
 
             if (qrUrl && qrUrl.startsWith("http")) {

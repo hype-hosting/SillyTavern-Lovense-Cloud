@@ -12,7 +12,7 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 * **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
 * **Full Toy Support:** Vibrate, Rotate, and Pump — supports the entire Lovense lineup.
 * **Explicit AI Control:** Give the AI precise control using tags like `[vibe:10]`, `[rotate:15]`, `[pump:2]`.
-* **Combined Commands:** Multiple tags in one message are sent as a single combined action.
+* **Continuous Mode:** Commands run indefinitely until the next response changes them or the user stops manually.
 * **Manual Control:** Test vibrations directly from the extension UI.
 
 ---
@@ -80,7 +80,7 @@ There are two ways the AI can control your toy:
 ### 1. Keyword Triggers (Passive)
 In the extension settings, you can define a list of words (comma-separated).
 * **Default:** `shiver, shake, throb, pulse`
-* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength for 10 seconds.
+* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength continuously until the next response or manual stop.
 
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:

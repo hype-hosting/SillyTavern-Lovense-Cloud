@@ -9,7 +9,6 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 const defaultSettings = {
     isEnabled: true,
     uid: "",
-    defaultTime: 10,
     keywords: "shiver,shake,throb,pulse",
 };
 
@@ -96,9 +95,8 @@ async function getQrCode() {
     }
 }
 
-// action: a pre-built action string like "Vibrate:10", "Rotate:15", "Pump:2",
-//         "Vibrate:10,Rotate:15", or "Stop".
-async function sendCommand(action, timeSec = 0) {
+// action: a pre-built action string like "Vibrate:10", "Rotate:15", "Pump:2", or "Stop".
+async function sendCommand(action) {
     if (!settings.isEnabled || !DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") return;
 
     const payload = {
@@ -106,12 +104,12 @@ async function sendCommand(action, timeSec = 0) {
         uid: settings.uid,
         command: "Function",
         action: action,
-        timeSec: timeSec,
+        timeSec: 0,
         stopPrevious: 1,
         apiVer: 1,
     };
 
-    console.log(`[Lovense] Sending: ${action} for ${timeSec}s`);
+    console.log(`[Lovense] Sending: ${action} (continuous)`);
 
     try {
         const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
@@ -136,32 +134,8 @@ const TAG_MAP = {
     pump:   { action: "Pump",    max: 3  },
 };
 
-// Matches [vibe:10], [rotate:15:8], [pump:2], etc.
-const TAG_REGEX = /\[(vibe|vibrate|rotate|pump):\s*(\d+)(?::(\d+))?\]/gi;
-
-// Queue for sequential command execution.
-let commandQueueTimers = [];
-
-function clearCommandQueue() {
-    for (const timer of commandQueueTimers) {
-        clearTimeout(timer);
-    }
-    commandQueueTimers = [];
-}
-
-function executeSequence(steps) {
-    clearCommandQueue();
-    if (steps.length === 0) return;
-
-    let delay = 0;
-    for (const step of steps) {
-        const timer = setTimeout(() => {
-            sendCommand(step.action, step.time);
-        }, delay * 1000);
-        commandQueueTimers.push(timer);
-        delay += step.time;
-    }
-}
+// Matches [vibe:10], [rotate:15], [pump:2], etc. Intensity only, no duration.
+const TAG_REGEX = /\[(vibe|vibrate|rotate|pump):\s*(\d+)\]/gi;
 
 function onMessageReceived(messageIndex) {
     if (!settings.isEnabled) return;
@@ -173,51 +147,32 @@ function onMessageReceived(messageIndex) {
 
         const text = (message.mes || "").toLowerCase();
 
-        // 1. Explicit Tags: [vibe:10], [rotate:15:8], [pump:2], etc.
-        //    Adjacent tags are combined into one simultaneous command.
-        //    Tags separated by other text become sequential steps.
-        const steps = [];
-        let prevEnd = -1;
+        // 1. Explicit Tags: use the LAST tag in the message.
+        //    Runs continuously until the next message changes it or user stops manually.
+        let lastMatch = null;
         let match;
         TAG_REGEX.lastIndex = 0;
         while ((match = TAG_REGEX.exec(text)) !== null) {
-            const tag = TAG_MAP[match[1]];
-            const strength = Math.min(parseInt(match[2]), tag.max);
-            const time = match[3] ? parseInt(match[3]) : settings.defaultTime;
-
-            if (strength === 0) {
-                clearCommandQueue();
-                sendCommand("Stop");
-                return;
-            }
-
-            const actionStr = `${tag.action}:${strength}`;
-            const textBetween = (prevEnd >= 0) ? text.substring(prevEnd, match.index).trim() : "";
-            const isAdjacent = prevEnd >= 0 && textBetween.length === 0;
-
-            if (isAdjacent && steps.length > 0) {
-                // Merge into the current step (simultaneous actions)
-                const current = steps[steps.length - 1];
-                current.action += `,${actionStr}`;
-                if (time > current.time) current.time = time;
-            } else {
-                // New sequential step
-                steps.push({ action: actionStr, time: time });
-            }
-
-            prevEnd = match.index + match[0].length;
+            lastMatch = match;
         }
 
-        if (steps.length > 0) {
-            executeSequence(steps);
+        if (lastMatch) {
+            const tag = TAG_MAP[lastMatch[1]];
+            const strength = Math.min(parseInt(lastMatch[2]), tag.max);
+
+            if (strength === 0) {
+                sendCommand("Stop");
+            } else {
+                sendCommand(`${tag.action}:${strength}`);
+            }
             return;
         }
 
-        // 2. Keywords — default: Vibrate at 10 for 10 seconds
+        // 2. Keywords — Vibrate at 10 continuously
         const keywords = (settings.keywords || "").split(",").map(s => s.trim());
         for (const word of keywords) {
             if (word && text.includes(word)) {
-                sendCommand("Vibrate:10", 10);
+                sendCommand("Vibrate:10");
                 break;
             }
         }
@@ -244,10 +199,10 @@ async function loadSettings() {
         $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
         
         $("#lovense-get-qr").on("click", getQrCode);
-        $("#lovense-low").on("click", () => sendCommand("Vibrate:5", settings.defaultTime));
-        $("#lovense-med").on("click", () => sendCommand("Vibrate:10", settings.defaultTime));
-        $("#lovense-high").on("click", () => sendCommand("Vibrate:20", settings.defaultTime));
-        $("#lovense-stop").on("click", () => { clearCommandQueue(); sendCommand("Stop"); });
+        $("#lovense-low").on("click", () => sendCommand("Vibrate:5"));
+        $("#lovense-med").on("click", () => sendCommand("Vibrate:10"));
+        $("#lovense-high").on("click", () => sendCommand("Vibrate:20"));
+        $("#lovense-stop").on("click", () => sendCommand("Stop"));
         
         console.log("[Lovense] UI Loaded Successfully.");
 

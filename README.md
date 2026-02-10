@@ -24,7 +24,7 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 2.  Open a terminal in `/public/scripts/extensions/third-party/`.
 3.  Clone this repository:
     ```bash
-    git clone https://github.com/hype-hosting/HypeHub.git lovense-cloud
+    git clone https://github.com/hype-hosting/SillyTavern-Lovense-Cloud.git lovense-cloud
     ```
 4.  Restart SillyTavern.
 

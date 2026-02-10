@@ -2,10 +2,9 @@
 
 A client-side extension for **SillyTavern** that allows AI characters to control your **Lovense** toys dynamically during chat.
 
-Unlike other solutions that require local network bridges (which fail on hosted/HTTPS instances), this extension uses the **Lovense Cloud API**. This means it works perfectly on:
+This extension uses the **Lovense Cloud API**. This means it works perfectly for:
+* ✅ Admins with cloud-hosted SillyTavern instances (e.g., Render, HuggingFace, personal VPS)
 * ✅ Locally hosted SillyTavern
-* ✅ Cloud-hosted SillyTavern (e.g., Render, HuggingFace, personal VPS)
-* ✅ Mobile browsers
 
 ## Features
 
@@ -132,6 +131,10 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 * [Lovense Discount](https://www.lovense.com/r/uo3mr6)
 * [Hype Discord](https://discord.gg/therealhype)
 * [Support Hype](https://ko-fi.com/hype)
+
+## Credit
+
+* Though this extension stands on its own and uses it's own code, it was inspired by the local Lovense extension by [SpicyMarinara](https://spicymarinara.github.io/). Be sure and support their work as well.
 
 ## License
 AGPL-3.0 — See [LICENSE](LICENSE) for details.

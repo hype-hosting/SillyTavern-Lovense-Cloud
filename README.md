@@ -85,23 +85,24 @@ In the extension settings, you can define a list of words (comma-separated).
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
 ```
-[System Note: You have remote control over the user's Lovense toy. To activate it, include the tag [vibe:strength] or [vibe:strength:seconds] in your response.
+[System Note: You have remote control over the user's Lovense toy.
+To activate it, include a tag in your response (one per message):
 
-strength is a number from 0-20.
-seconds is how long it lasts (default is 10).
+[vibe:N] — Vibrate at intensity N (0-20)
+[rotate:N] — Rotate at intensity N (0-20)
+[pump:N] — Pump at intensity N (0-3)
+
+The action runs continuously until your next message changes it or the user stops manually.
+Use [vibe:0] to stop the toy.
+
 Examples:
+[vibe:5] -> Gentle continuous vibration.
+[vibe:20] -> Maximum vibration.
+[rotate:15] -> Strong rotation.
+[pump:2] -> Medium pump.
+[vibe:0] -> Stop all toy actions.
 
-[vibe:5] -> Gentle vibration for 5 seconds.
-[vibe:20:10] -> Maximum vibration for 10 seconds.
-[rotate:15:8] -> Strong rotation for 8 seconds.
-[pump:2:5] -> Medium pump for 5 seconds.
-[vibe:10][rotate:10] -> Vibrate and rotate simultaneously.
-[vibe:0] -> Stop all toy actions immediately.
-
-Enclose commands in `<!-- [command] -->` syntax in-line.
-
-Usage: "I'm going to tease you now. <!-- [vibe:5] --> Do you feel that? Let me turn it up... <!-- [vibe:15][rotate:10:8] --> How about now?"
-]
+Usage: "I'm going to tease you now. [vibe:5] Do you feel that?" ...next message... "Let me turn it up. [vibe:15]"]
 ```
 
 ---

@@ -2,8 +2,8 @@
 
 A client-side extension for **SillyTavern** that allows AI characters to control your **Lovense** toys dynamically during chat.
 
-This extension uses the **Lovense Cloud API**. This means it works perfectly for:
-* ✅ Admins with cloud-hosted SillyTavern instances (e.g., Render, HuggingFace, personal VPS)
+This extension uses the **Lovense Cloud API**. This means it works well for:
+* ✅ Cloud-hosted multi-user SillyTavern instances (e.g., Render, HuggingFace, personal VPS)
 * ✅ Locally hosted SillyTavern
 
 ## Features

@@ -14,7 +14,7 @@ Unlike other solutions that require local network bridges (which fail on hosted/
 * **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
 * **Full Toy Support:** Vibrate, Rotate, and Pump — supports the entire Lovense lineup.
 * **Explicit AI Control:** Give the AI precise control using tags like `[vibe:10]`, `[rotate:15]`, `[pump:2]`.
-* **Combined Commands:** Multiple tags in one message are sent as a single combined action.
+* **Continuous Mode:** Commands run indefinitely until the next response changes them or the user stops manually.
 * **Manual Control:** Test vibrations directly from the extension UI.
 
 ---
@@ -82,31 +82,30 @@ There are two ways the AI can control your toy:
 ### 1. Keyword Triggers (Passive)
 In the extension settings, you can define a list of words (comma-separated).
 * **Default:** `shiver, shake, throb, pulse`
-* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength for 10 seconds.
+* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength continuously until the next response or manual stop.
 
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
 
 > **[System Note:]**
 > You have remote control over the user's Lovense toy.
-> To activate it, include one or more of these tags in your response:
-> * `[vibe:strength]` or `[vibe:strength:seconds]` — Vibrate (strength 0-20)
-> * `[rotate:strength]` or `[rotate:strength:seconds]` — Rotate (strength 0-20)
-> * `[pump:strength]` or `[pump:strength:seconds]` — Pump (strength 0-3)
-> * `seconds` is optional and controls how long it lasts (default is 10).
-> * You can combine multiple tags in one message for simultaneous actions.
+> To activate it, include a tag in your response (one per message):
+> * `[vibe:strength]` — Vibrate (strength 0-20)
+> * `[rotate:strength]` — Rotate (strength 0-20)
+> * `[pump:strength]` — Pump (strength 0-3)
+> * The action runs continuously until your next response changes it or the user stops manually.
+> * Use `[vibe:0]` to stop the toy.
 >
 > **Examples:**
-> * `[vibe:5]` -> Gentle vibration for 5 seconds.
-> * `[vibe:20:10]` -> Maximum vibration for 10 seconds.
-> * `[rotate:15:8]` -> Strong rotation for 8 seconds.
-> * `[pump:2:5]` -> Medium pump for 5 seconds.
-> * `[vibe:10][rotate:10]` -> Vibrate and rotate simultaneously.
+> * `[vibe:5]` -> Gentle continuous vibration.
+> * `[vibe:20]` -> Maximum vibration.
+> * `[rotate:15]` -> Strong rotation.
+> * `[pump:2]` -> Medium pump.
 > * `[vibe:0]` -> Stop all toy actions immediately.
 >
 > **Usage:**
 > "I'm going to tease you now. [vibe:5] Do you feel that?"
-> "Let me turn it up... [vibe:15][rotate:10:8] How about now?"
+> "Let me turn it up... [vibe:15]"
 
 ---
 

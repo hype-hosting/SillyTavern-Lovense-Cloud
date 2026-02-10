@@ -1,8 +1,8 @@
 {
     "display_name": "Lovense Cloud",
     "requires": [],
-    "author": "Timeless Tavern",
-    "version": "1.0.0",
+    "author": "Hyperion",
+    "version": "1.1.0",
     "description": "Client-side Lovense control via Cloud API.",
     "icon": "fa-solid fa-satellite-dish",
     "js": "index.js",

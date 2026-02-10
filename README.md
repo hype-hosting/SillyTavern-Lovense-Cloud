@@ -89,9 +89,12 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 
 > **[System Note:]**
 > You have remote control over the user's Lovense toy.
-> To activate it, include the tag `[vibe:strength]` or `[vibe:strength:seconds]` in your response.
-> * `strength` is a number from 0-20.
-> * `seconds` is how long it lasts (default is 10).
+> To activate it, include one or more of these tags in your response:
+> * `[vibe:strength]` or `[vibe:strength:seconds]` — Vibrate (strength 0-20)
+> * `[rotate:strength]` or `[rotate:strength:seconds]` — Rotate (strength 0-20)
+> * `[pump:strength]` or `[pump:strength:seconds]` — Pump (strength 0-3)
+> * `seconds` is optional and controls how long it lasts (default is 10).
+> * You can combine multiple tags in one message for simultaneous actions.
 >
 > **Examples:**
 > * `[vibe:5]` -> Gentle vibration for 5 seconds.
@@ -131,4 +134,4 @@ For the best experience, instruct the AI to use the toy explicitly. Add the foll
 * [Support Hype](https://ko-fi.com/hype)
 
 ## License
-MIT License. Feel free to fork and modify.
+AGPL-3.0 — See [LICENSE](LICENSE) for details.

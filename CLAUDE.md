@@ -12,7 +12,9 @@ lovense-cloud/
 ├── index.js           # All logic: API calls, automation, settings, init
 ├── settings.html      # UI panel injected into ST's Extensions sidebar
 ├── style.css          # Minimal styling for the settings panel
-└── README.md          # User/admin-facing docs
+├── README.md          # User/admin-facing docs
+├── LICENSE            # AGPL-3.0
+└── CLAUDE.md          # This file — dev context for AI-assisted coding
 ```
 
 ## Architecture
@@ -60,5 +62,5 @@ Two modes, checked in order (explicit tags win over keywords):
 - jQuery is available globally in ST — used for DOM manipulation and AJAX.
 - The `uid` is regenerated each time QR is generated (fresh session).
 - `sendCommand(action, timeSec)` takes an action string like `"Vibrate:10"`, `"Rotate:15,Pump:2"`, or `"Stop"`.
-- Test buttons use `settings.defaultTime` (5s); keyword triggers fire `Vibrate:10` for 10s.
+- Test buttons use `settings.defaultTime` (10s); keyword triggers also fire `Vibrate:10` for 10s.
 - `stopPrevious: 1` in command payload ensures new commands override running ones.

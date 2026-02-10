@@ -139,6 +139,30 @@ const TAG_MAP = {
 // Matches [vibe:10], [rotate:15:8], [pump:2], etc.
 const TAG_REGEX = /\[(vibe|vibrate|rotate|pump):\s*(\d+)(?::(\d+))?\]/gi;
 
+// Queue for sequential command execution.
+let commandQueueTimers = [];
+
+function clearCommandQueue() {
+    for (const timer of commandQueueTimers) {
+        clearTimeout(timer);
+    }
+    commandQueueTimers = [];
+}
+
+function executeSequence(steps) {
+    clearCommandQueue();
+    if (steps.length === 0) return;
+
+    let delay = 0;
+    for (const step of steps) {
+        const timer = setTimeout(() => {
+            sendCommand(step.action, step.time);
+        }, delay * 1000);
+        commandQueueTimers.push(timer);
+        delay += step.time;
+    }
+}
+
 function onMessageReceived(messageIndex) {
     if (!settings.isEnabled) return;
 
@@ -150,26 +174,42 @@ function onMessageReceived(messageIndex) {
         const text = (message.mes || "").toLowerCase();
 
         // 1. Explicit Tags: [vibe:10], [rotate:15:8], [pump:2], etc.
-        //    Multiple tags in one message are combined into a single command.
-        const actions = [];
-        let maxTime = 0;
+        //    Adjacent tags are combined into one simultaneous command.
+        //    Tags separated by other text become sequential steps.
+        const steps = [];
+        let prevEnd = -1;
         let match;
         TAG_REGEX.lastIndex = 0;
         while ((match = TAG_REGEX.exec(text)) !== null) {
             const tag = TAG_MAP[match[1]];
             const strength = Math.min(parseInt(match[2]), tag.max);
             const time = match[3] ? parseInt(match[3]) : settings.defaultTime;
-            if (time > maxTime) maxTime = time;
 
             if (strength === 0) {
+                clearCommandQueue();
                 sendCommand("Stop");
                 return;
             }
-            actions.push(`${tag.action}:${strength}`);
+
+            const actionStr = `${tag.action}:${strength}`;
+            const textBetween = (prevEnd >= 0) ? text.substring(prevEnd, match.index).trim() : "";
+            const isAdjacent = prevEnd >= 0 && textBetween.length === 0;
+
+            if (isAdjacent && steps.length > 0) {
+                // Merge into the current step (simultaneous actions)
+                const current = steps[steps.length - 1];
+                current.action += `,${actionStr}`;
+                if (time > current.time) current.time = time;
+            } else {
+                // New sequential step
+                steps.push({ action: actionStr, time: time });
+            }
+
+            prevEnd = match.index + match[0].length;
         }
 
-        if (actions.length > 0) {
-            sendCommand(actions.join(","), maxTime);
+        if (steps.length > 0) {
+            executeSequence(steps);
             return;
         }
 
@@ -207,7 +247,7 @@ async function loadSettings() {
         $("#lovense-low").on("click", () => sendCommand("Vibrate:5", settings.defaultTime));
         $("#lovense-med").on("click", () => sendCommand("Vibrate:10", settings.defaultTime));
         $("#lovense-high").on("click", () => sendCommand("Vibrate:20", settings.defaultTime));
-        $("#lovense-stop").on("click", () => sendCommand("Stop"));
+        $("#lovense-stop").on("click", () => { clearCommandQueue(); sendCommand("Stop"); });
         
         console.log("[Lovense] UI Loaded Successfully.");
 

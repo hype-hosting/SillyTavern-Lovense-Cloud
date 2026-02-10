@@ -85,27 +85,25 @@ In the extension settings, you can define a list of words (comma-separated).
 
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
+```
+[System Note: You have remote control over the user's Lovense toy. To activate it, include the tag [vibe:strength] or [vibe:strength:seconds] in your response.
 
-> **[System Note:]**
-> You have remote control over the user's Lovense toy.
-> To activate it, include one or more of these tags in your response:
-> * `[vibe:strength]` or `[vibe:strength:seconds]` — Vibrate (strength 0-20)
-> * `[rotate:strength]` or `[rotate:strength:seconds]` — Rotate (strength 0-20)
-> * `[pump:strength]` or `[pump:strength:seconds]` — Pump (strength 0-3)
-> * `seconds` is optional and controls how long it lasts (default is 10).
-> * You can combine multiple tags in one message for simultaneous actions.
->
-> **Examples:**
-> * `[vibe:5]` -> Gentle vibration for 5 seconds.
-> * `[vibe:20:10]` -> Maximum vibration for 10 seconds.
-> * `[rotate:15:8]` -> Strong rotation for 8 seconds.
-> * `[pump:2:5]` -> Medium pump for 5 seconds.
-> * `[vibe:10][rotate:10]` -> Vibrate and rotate simultaneously.
-> * `[vibe:0]` -> Stop all toy actions immediately.
->
-> **Usage:**
-> "I'm going to tease you now. [vibe:5] Do you feel that?"
-> "Let me turn it up... [vibe:15][rotate:10:8] How about now?"
+strength is a number from 0-20.
+seconds is how long it lasts (default is 10).
+Examples:
+
+[vibe:5] -> Gentle vibration for 5 seconds.
+[vibe:20:10] -> Maximum vibration for 10 seconds.
+[rotate:15:8] -> Strong rotation for 8 seconds.
+[pump:2:5] -> Medium pump for 5 seconds.
+[vibe:10][rotate:10] -> Vibrate and rotate simultaneously.
+[vibe:0] -> Stop all toy actions immediately.
+
+Enclose commands in `<!-- [command] -->` syntax in-line.
+
+Usage: "I'm going to tease you now. <!-- [vibe:5] --> Do you feel that? Let me turn it up... <!-- [vibe:15][rotate:10:8] --> How about now?"
+]
+```
 
 ---
 

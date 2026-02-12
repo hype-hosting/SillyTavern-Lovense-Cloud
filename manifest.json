@@ -2,7 +2,7 @@
     "display_name": "Lovense Cloud",
     "requires": [],
     "author": "Hyperion",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Client-side Lovense control via Cloud API.",
     "icon": "fa-solid fa-satellite-dish",
     "js": "index.js",

@@ -73,6 +73,11 @@ async function getQrCode() {
                     </div>
                 `);
                 toastr.success("New QR Code received.");
+                // Auto-check toy status after a delay (user needs time to scan)
+                setTimeout(async () => {
+                    const status = await getToyStatus();
+                    renderToyStatus(status);
+                }, 15000);
             } else {
                 // Fallback if we still can't find a URL
                 $("#lovense-qr-container").html(`
@@ -124,18 +129,119 @@ async function sendCommand(action) {
     }
 }
 
+// name: one of "pulse", "wave", "fireworks", "earthquake".
+async function sendPreset(name) {
+    if (!settings.isEnabled || !DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") return;
+
+    const payload = {
+        token: DEV_TOKEN,
+        uid: settings.uid,
+        command: "Preset",
+        name: name,
+        timeSec: 0,
+        apiVer: 1,
+    };
+
+    console.log(`[Lovense] Sending preset: ${name} (continuous)`);
+
+    try {
+        const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        console.log("[Lovense] Preset response:", data);
+    } catch (e) {
+        console.error("[Lovense] Preset Failed:", e);
+    }
+}
+
+// Queries connected toys and returns their info.
+async function getToyStatus() {
+    if (!DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") return null;
+
+    const payload = {
+        token: DEV_TOKEN,
+        uid: settings.uid,
+        command: "GetToys",
+        apiVer: 1,
+    };
+
+    try {
+        const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        console.log("[Lovense] GetToys response:", data);
+        return data;
+    } catch (e) {
+        console.error("[Lovense] GetToys Failed:", e);
+        return null;
+    }
+}
+
+function renderToyStatus(data) {
+    const container = $("#lovense-toy-status");
+    if (!container.length) return;
+
+    if (!data || data.code !== 200 || !data.data || !data.data.toys) {
+        container.html('<span style="opacity:0.5; font-style:italic; font-size:0.85em;">No toys detected. Scan QR and connect first.</span>');
+        return;
+    }
+
+    let toys;
+    try {
+        toys = typeof data.data.toys === "string" ? JSON.parse(data.data.toys) : data.data.toys;
+    } catch (e) {
+        container.html('<span style="opacity:0.5; font-style:italic; font-size:0.85em;">Could not parse toy data.</span>');
+        return;
+    }
+
+    const entries = Object.values(toys);
+    if (entries.length === 0) {
+        container.html('<span style="opacity:0.5; font-style:italic; font-size:0.85em;">No toys connected.</span>');
+        return;
+    }
+
+    const html = entries.map(toy => {
+        const status = toy.status === "1" || toy.status === 1;
+        const icon = status ? "fa-circle-check" : "fa-circle-xmark";
+        const color = status ? "#4caf50" : "#f44336";
+        const name = toy.nickName || toy.name || "Unknown";
+        const battery = toy.battery != null ? `${toy.battery}%` : "?";
+        return `<div style="display:flex; align-items:center; gap:8px; padding:4px 0;">
+            <i class="fa-solid ${icon}" style="color:${color};"></i>
+            <span style="font-weight:bold; text-transform:capitalize;">${name}</span>
+            <span style="opacity:0.6; font-size:0.85em;"><i class="fa-solid fa-battery-half"></i> ${battery}</span>
+        </div>`;
+    }).join("");
+
+    container.html(html);
+}
+
 // --- AUTOMATION ---
 
-// Tag-to-action mapping. Strength ranges: Vibrate 0-20, Rotate 0-20, Pump 0-3.
+// Tag-to-action mapping. Strength ranges vary by type.
 const TAG_MAP = {
-    vibe:   { action: "Vibrate", max: 20 },
-    vibrate:{ action: "Vibrate", max: 20 },
-    rotate: { action: "Rotate",  max: 20 },
-    pump:   { action: "Pump",    max: 3  },
+    vibe:      { action: "Vibrate",   max: 20 },
+    vibrate:   { action: "Vibrate",   max: 20 },
+    rotate:    { action: "Rotate",    max: 20 },
+    pump:      { action: "Pump",      max: 3  },
+    thrust:    { action: "Thrusting", max: 20 },
+    finger:    { action: "Fingering", max: 20 },
+    suction:   { action: "Suction",   max: 20 },
+    oscillate: { action: "Oscillate", max: 20 },
+    depth:     { action: "Depth",     max: 3  },
 };
 
-// Matches [vibe:10], [rotate:15], [pump:2], etc. Intensity only, no duration.
-const TAG_REGEX = /\[(vibe|vibrate|rotate|pump):\s*(\d+)\]/gi;
+// Matches [vibe:10], [rotate:15], [thrust:8], etc. Intensity only, no duration.
+const TAG_REGEX = /\[(vibe|vibrate|rotate|pump|thrust|finger|suction|oscillate|depth):\s*(\d+)\]/gi;
+
+// Matches [pulse], [wave], [fireworks], [earthquake]. No parameters.
+const PRESET_REGEX = /\[(pulse|wave|fireworks|earthquake)\]/gi;
 
 function onMessageReceived(messageIndex) {
     if (!settings.isEnabled) return;
@@ -147,7 +253,21 @@ function onMessageReceived(messageIndex) {
 
         const text = (message.mes || "").toLowerCase();
 
-        // 1. Explicit Tags: use the LAST tag in the message.
+        // 1. Preset Tags: [pulse], [wave], [fireworks], [earthquake]
+        //    Checked first — last preset tag wins.
+        let lastPreset = null;
+        let presetMatch;
+        PRESET_REGEX.lastIndex = 0;
+        while ((presetMatch = PRESET_REGEX.exec(text)) !== null) {
+            lastPreset = presetMatch;
+        }
+
+        if (lastPreset) {
+            sendPreset(lastPreset[1]);
+            return;
+        }
+
+        // 2. Function Tags: use the LAST tag in the message.
         //    Runs continuously until the next message changes it or user stops manually.
         let lastMatch = null;
         let match;
@@ -168,7 +288,7 @@ function onMessageReceived(messageIndex) {
             return;
         }
 
-        // 2. Keywords — Vibrate at 10 continuously
+        // 3. Keywords — Vibrate at 10 continuously
         const keywords = (settings.keywords || "").split(",").map(s => s.trim());
         for (const word of keywords) {
             if (word && text.includes(word)) {
@@ -203,6 +323,19 @@ async function loadSettings() {
         $("#lovense-med").on("click", () => sendCommand("Vibrate:10"));
         $("#lovense-high").on("click", () => sendCommand("Vibrate:20"));
         $("#lovense-stop").on("click", () => sendCommand("Stop"));
+
+        // Preset buttons
+        $("#lovense-pulse").on("click", () => sendPreset("pulse"));
+        $("#lovense-wave").on("click", () => sendPreset("wave"));
+        $("#lovense-fireworks").on("click", () => sendPreset("fireworks"));
+        $("#lovense-earthquake").on("click", () => sendPreset("earthquake"));
+
+        // Toy status
+        $("#lovense-refresh-status").on("click", async () => {
+            $("#lovense-toy-status").html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
+            const status = await getToyStatus();
+            renderToyStatus(status);
+        });
         
         console.log("[Lovense] UI Loaded Successfully.");
 

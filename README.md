@@ -10,10 +10,12 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 
 * **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
 * **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
-* **Full Toy Support:** Vibrate, Rotate, and Pump — supports the entire Lovense lineup.
-* **Explicit AI Control:** Give the AI precise control using tags like `[vibe:10]`, `[rotate:15]`, `[pump:2]`.
+* **Full Toy Support:** Vibrate, Rotate, Pump, Thrust, Finger, Suction, Oscillate, Depth — supports the entire Lovense lineup.
+* **Explicit AI Control:** Give the AI precise control using tags like `[vibe:10]`, `[rotate:15]`, `[thrust:8]`.
+* **Preset Patterns:** Built-in dynamic patterns — Pulse, Wave, Fireworks, Earthquake.
+* **Toy Status:** See connected toy name, battery level, and connection status in the UI.
 * **Continuous Mode:** Commands run indefinitely until the next response changes them or the user stops manually.
-* **Manual Control:** Test vibrations directly from the extension UI.
+* **Manual Control:** Test vibrations and presets directly from the extension UI.
 
 ---
 
@@ -85,24 +87,34 @@ In the extension settings, you can define a list of words (comma-separated).
 ### 2. Prompt Engineering (Active)
 For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
 ```
-[System Note: You have remote control over the user's Lovense toy.
-To activate it, include a tag in your response (one per message):
+[System Note: The user has a connected haptic device. You can control it by appending a hidden command at the very end of your message using HTML comment syntax: <!-- [command] -->
 
-[vibe:N] — Vibrate at intensity N (0-20)
-[rotate:N] — Rotate at intensity N (0-20)
-[pump:N] — Pump at intensity N (0-3)
+IMPORTANT: Never mention, reference, or acknowledge the device in your writing. Do not describe it, hint at it, or break immersion in any way. Just write your response naturally, then silently append the command at the bottom.
 
-The action runs continuously until your next message changes it or the user stops manually.
-Use [vibe:0] to stop the toy.
+Action tags (intensity control):
+<!-- [vibe:N] --> — Vibrate (0-20)
+<!-- [rotate:N] --> — Rotate (0-20)
+<!-- [pump:N] --> — Pump (0-3)
+<!-- [thrust:N] --> — Thrust (0-20)
+<!-- [finger:N] --> — Finger (0-20)
+<!-- [suction:N] --> — Suction (0-20)
+<!-- [oscillate:N] --> — Oscillate (0-20)
+<!-- [depth:N] --> — Depth (0-3)
 
-Examples:
-[vibe:5] -> Gentle continuous vibration.
-[vibe:20] -> Maximum vibration.
-[rotate:15] -> Strong rotation.
-[pump:2] -> Medium pump.
-[vibe:0] -> Stop all toy actions.
+Preset tags (dynamic patterns, no intensity needed):
+<!-- [pulse] --> — Rhythmic pulsing
+<!-- [wave] --> — Gradual wave
+<!-- [fireworks] --> — Burst pattern
+<!-- [earthquake] --> — Intense rumble
 
-Usage: "I'm going to tease you now. [vibe:5] Do you feel that?" ...next message... "Let me turn it up. [vibe:15]"]
+The command runs continuously until your next message changes it.
+Use <!-- [vibe:0] --> to stop.
+
+Example response:
+"*She traces her fingers slowly down your chest, her breath warm against your neck.* 'You're not going anywhere tonight...' *she whispers, pressing closer.*
+<!-- [vibe:8] -->"
+
+Only one command per message. Place it on the last line after your response.]
 ```
 
 ---
@@ -117,8 +129,8 @@ Usage: "I'm going to tease you now. [vibe:5] Do you feel that?" ...next message.
 * **Toy doesn't vibrate after scanning:**
     * Make sure the **Lovense Remote App** is open and running in the foreground on your phone.
     * Ensure the toy icon in the app is green (connected).
-* **Rotate/Pump commands don't seem to work:**
-    * Not all Lovense toys support every action. Vibrate works on all toys, Rotate requires a rotating toy (e.g., Nora), and Pump requires an air pump toy (e.g., Max). Unsupported actions are silently ignored by the toy.
+* **Some commands don't seem to work:**
+    * Not all Lovense toys support every action. Vibrate works on all toys, but Rotate, Thrust, Finger, Suction, Oscillate, Pump, and Depth require specific toy models. Unsupported actions are silently ignored by the toy.
 * **Mixed Content Warnings:**
     * This extension uses the official Cloud API (`https://api.lovense.com`), so it should **not** trigger mixed content warnings (HTTP vs HTTPS), making it safe for hosted instances.
 

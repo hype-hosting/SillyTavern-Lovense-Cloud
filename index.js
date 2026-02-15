@@ -6,10 +6,30 @@ const DEV_TOKEN = "PASTE_YOUR_TOKEN_HERE";
 const extensionName = "lovense-cloud";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
+// Maximum intensity per action type (API constraint, not user-configurable).
+const ACTION_MAX = {
+    Vibrate: 20, Rotate: 20, Pump: 3, Thrusting: 20,
+    Fingering: 20, Suction: 20, Oscillate: 20, Depth: 3,
+};
+
 const defaultSettings = {
     isEnabled: true,
     uid: "",
-    keywords: "shiver,shake,throb,pulse",
+    actions: {
+        Vibrate:   { keywords: "shiver,shake,throb,tingle,buzz,hum,tremble,quiver,shudder", baseIntensity: 10 },
+        Rotate:    { keywords: "twist,swirl,spin,grind,circle,gyrate,coil", baseIntensity: 10 },
+        Pump:      { keywords: "inflate,swell,expand,fill,bulge", baseIntensity: 2 },
+        Thrusting: { keywords: "thrust,pound,slam,drive,plunge,ram,buck,lunge", baseIntensity: 10 },
+        Fingering: { keywords: "curl,probe,press inside,hook", baseIntensity: 10 },
+        Suction:   { keywords: "suck,suction,latch,clamp,vacuum", baseIntensity: 10 },
+        Oscillate: { keywords: "sway,rock,undulate,ripple,flutter", baseIntensity: 10 },
+        Depth:     { keywords: "hilt,bottom out,fully inside", baseIntensity: 2 },
+    },
+    intensityModifiers: {
+        low:  ["gentle","gently","soft","softly","light","lightly","tender","tenderly","slow","slowly","faint","barely","subtle","delicate"],
+        high: ["hard","harder","intense","intensely","rough","roughly","fast","faster","furious","furiously","aggressive","aggressively","powerful","powerfully","strong","stronger","fierce","fiercely","relentless"],
+    },
+    modifierScale: { low: 0.5, high: 1.5 },
 };
 
 // Populated by initSettings() once SillyTavern is ready.
@@ -22,6 +42,37 @@ function initSettings() {
 
     if (!settings.uid) {
         settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Migrate v1.x flat keywords to v2.0 per-action structure
+    if (typeof settings.keywords === "string" && settings.keywords.trim()) {
+        if (!settings.actions) {
+            settings.actions = JSON.parse(JSON.stringify(defaultSettings.actions));
+        }
+        const oldWords = settings.keywords.split(",").map(s => s.trim()).filter(Boolean);
+        const existingWords = settings.actions.Vibrate.keywords.split(",").map(s => s.trim()).filter(Boolean);
+        const merged = [...new Set([...existingWords, ...oldWords])];
+        settings.actions.Vibrate.keywords = merged.join(",");
+        delete settings.keywords;
+        console.log("[Lovense] Migrated v1.x keywords to v2.0 per-action format.");
+    }
+
+    // Ensure all action types exist (handles partial settings from older versions)
+    if (!settings.actions) {
+        settings.actions = JSON.parse(JSON.stringify(defaultSettings.actions));
+    }
+    for (const [action, defaults] of Object.entries(defaultSettings.actions)) {
+        if (!settings.actions[action]) {
+            settings.actions[action] = JSON.parse(JSON.stringify(defaults));
+        }
+    }
+
+    // Ensure intensity modifiers exist
+    if (!settings.intensityModifiers) {
+        settings.intensityModifiers = JSON.parse(JSON.stringify(defaultSettings.intensityModifiers));
+    }
+    if (!settings.modifierScale) {
+        settings.modifierScale = { ...defaultSettings.modifierScale };
     }
 
     extensionSettings[extensionName] = settings;
@@ -224,24 +275,25 @@ function renderToyStatus(data) {
 
 // --- AUTOMATION ---
 
-// Tag-to-action mapping. Strength ranges vary by type.
-const TAG_MAP = {
-    vibe:      { action: "Vibrate",   max: 20 },
-    vibrate:   { action: "Vibrate",   max: 20 },
-    rotate:    { action: "Rotate",    max: 20 },
-    pump:      { action: "Pump",      max: 3  },
-    thrust:    { action: "Thrusting", max: 20 },
-    finger:    { action: "Fingering", max: 20 },
-    suction:   { action: "Suction",   max: 20 },
-    oscillate: { action: "Oscillate", max: 20 },
-    depth:     { action: "Depth",     max: 3  },
-};
+// Word-boundary check for intensity modifier words (avoids "light" matching "spotlight").
+function textContainsWord(text, word) {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b${escaped}\\b`, "i").test(text);
+}
 
-// Matches [vibe:10], [rotate:15], [thrust:8], etc. Intensity only, no duration.
-const TAG_REGEX = /\[(vibe|vibrate|rotate|pump|thrust|finger|suction|oscillate|depth):\s*(\d+)\]/gi;
+// Scans text for intensity modifier words and returns a multiplier.
+function detectIntensityModifier(text) {
+    const lowWords = settings.intensityModifiers?.low || [];
+    const highWords = settings.intensityModifiers?.high || [];
 
-// Matches [pulse], [wave], [fireworks], [earthquake]. No parameters.
-const PRESET_REGEX = /\[(pulse|wave|fireworks|earthquake)\]/gi;
+    const hasHigh = highWords.some(word => textContainsWord(text, word));
+    const hasLow = lowWords.some(word => textContainsWord(text, word));
+
+    // High wins if both present (escalation intent)
+    if (hasHigh) return settings.modifierScale?.high || 1.5;
+    if (hasLow) return settings.modifierScale?.low || 0.5;
+    return 1.0;
+}
 
 function onMessageReceived(messageIndex) {
     if (!settings.isEnabled) return;
@@ -253,48 +305,29 @@ function onMessageReceived(messageIndex) {
 
         const text = (message.mes || "").toLowerCase();
 
-        // 1. Preset Tags: [pulse], [wave], [fireworks], [earthquake]
-        //    Checked first — last preset tag wins.
-        let lastPreset = null;
-        let presetMatch;
-        PRESET_REGEX.lastIndex = 0;
-        while ((presetMatch = PRESET_REGEX.exec(text)) !== null) {
-            lastPreset = presetMatch;
-        }
+        // 1. Determine intensity modifier from text
+        const modifier = detectIntensityModifier(text);
 
-        if (lastPreset) {
-            sendPreset(lastPreset[1]);
-            return;
-        }
+        // 2. Scan for keyword matches across all action types
+        const matchedActions = [];
 
-        // 2. Function Tags: use the LAST tag in the message.
-        //    Runs continuously until the next message changes it or user stops manually.
-        let lastMatch = null;
-        let match;
-        TAG_REGEX.lastIndex = 0;
-        while ((match = TAG_REGEX.exec(text)) !== null) {
-            lastMatch = match;
-        }
+        for (const [actionName, config] of Object.entries(settings.actions)) {
+            const keywords = (config.keywords || "").split(",").map(s => s.trim()).filter(Boolean);
+            const matched = keywords.some(word => word && text.includes(word));
 
-        if (lastMatch) {
-            const tag = TAG_MAP[lastMatch[1]];
-            const strength = Math.min(parseInt(lastMatch[2]), tag.max);
-
-            if (strength === 0) {
-                sendCommand("Stop");
-            } else {
-                sendCommand(`${tag.action}:${strength}`);
+            if (matched) {
+                const max = ACTION_MAX[actionName] || 20;
+                let intensity = Math.round(config.baseIntensity * modifier);
+                intensity = Math.max(1, Math.min(intensity, max));
+                matchedActions.push(`${actionName}:${intensity}`);
             }
-            return;
         }
 
-        // 3. Keywords — Vibrate at 10 continuously
-        const keywords = (settings.keywords || "").split(",").map(s => s.trim());
-        for (const word of keywords) {
-            if (word && text.includes(word)) {
-                sendCommand("Vibrate:10");
-                break;
-            }
+        // 3. Send combined command if any actions matched
+        if (matchedActions.length > 0) {
+            const combined = matchedActions.join(",");
+            console.log(`[Lovense] Keyword matches -> ${combined} (modifier: ${modifier}x)`);
+            sendCommand(combined);
         }
     } catch (e) {
         console.error("[Lovense] Error processing message:", e);
@@ -303,21 +336,76 @@ function onMessageReceived(messageIndex) {
 
 // --- UI LOADING ---
 
+function updateActionPreview(actionName) {
+    const keywords = (settings.actions[actionName]?.keywords || "").split(",").map(s => s.trim()).filter(Boolean);
+    const count = keywords.length;
+    $(`#lovense-preview-${actionName}`).text(count === 0 ? "no keywords" : `${count} keyword${count === 1 ? "" : "s"}`);
+}
+
 async function loadSettings() {
     console.log("[Lovense] Loading UI from:", `${extensionFolderPath}/settings.html`);
-    
+
     try {
         const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
         $("#extensions_settings").append(settingsHtml);
 
-        // Populate Fields
+        // Populate enable checkbox
         $("#lovense-enable").prop("checked", settings.isEnabled);
-        $("#lovense-keywords").val(settings.keywords);
-
-        // Bind Listeners
         $("#lovense-enable").on("change", (e) => { settings.isEnabled = e.target.checked; saveSettings(); });
-        $("#lovense-keywords").on("input", (e) => { settings.keywords = e.target.value; saveSettings(); });
-        
+
+        // Populate and bind per-action settings
+        for (const [actionName, config] of Object.entries(settings.actions)) {
+            $(`#lovense-keywords-${actionName}`).val(config.keywords);
+            $(`#lovense-intensity-${actionName}`).val(config.baseIntensity);
+            $(`#lovense-intensity-val-${actionName}`).text(config.baseIntensity);
+            updateActionPreview(actionName);
+
+            $(`#lovense-keywords-${actionName}`).on("input", function () {
+                settings.actions[actionName].keywords = $(this).val();
+                updateActionPreview(actionName);
+                saveSettings();
+            });
+
+            $(`#lovense-intensity-${actionName}`).on("input", function () {
+                const val = parseInt($(this).val());
+                settings.actions[actionName].baseIntensity = val;
+                $(`#lovense-intensity-val-${actionName}`).text(val);
+                saveSettings();
+            });
+        }
+
+        // Collapsible action headers
+        $(".lovense-action-header").on("click", function () {
+            const $body = $(this).next(".lovense-action-body");
+            const $chevron = $(this).find(".lovense-action-chevron");
+            $body.slideToggle(150);
+            $chevron.toggleClass("fa-chevron-right fa-chevron-down");
+        });
+
+        // Populate and bind intensity modifiers
+        $("#lovense-mod-low").val((settings.intensityModifiers.low || []).join(", "));
+        $("#lovense-mod-high").val((settings.intensityModifiers.high || []).join(", "));
+        $("#lovense-mod-low-scale").val(settings.modifierScale.low);
+        $("#lovense-mod-high-scale").val(settings.modifierScale.high);
+
+        $("#lovense-mod-low").on("input", function () {
+            settings.intensityModifiers.low = $(this).val().split(",").map(s => s.trim()).filter(Boolean);
+            saveSettings();
+        });
+        $("#lovense-mod-high").on("input", function () {
+            settings.intensityModifiers.high = $(this).val().split(",").map(s => s.trim()).filter(Boolean);
+            saveSettings();
+        });
+        $("#lovense-mod-low-scale").on("change", function () {
+            settings.modifierScale.low = parseFloat($(this).val()) || 0.5;
+            saveSettings();
+        });
+        $("#lovense-mod-high-scale").on("change", function () {
+            settings.modifierScale.high = parseFloat($(this).val()) || 1.5;
+            saveSettings();
+        });
+
+        // Connection & manual controls
         $("#lovense-get-qr").on("click", getQrCode);
         $("#lovense-low").on("click", () => sendCommand("Vibrate:5"));
         $("#lovense-med").on("click", () => sendCommand("Vibrate:10"));
@@ -336,7 +424,7 @@ async function loadSettings() {
             const status = await getToyStatus();
             renderToyStatus(status);
         });
-        
+
         console.log("[Lovense] UI Loaded Successfully.");
 
     } catch (err) {

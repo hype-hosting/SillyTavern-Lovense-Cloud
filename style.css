@@ -12,3 +12,42 @@
     text-decoration: none;
     display: block;
 }
+.lovense-action-group {
+    margin-bottom: 4px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.lovense-action-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    background: rgba(0,0,0,0.1);
+    user-select: none;
+}
+.lovense-action-header:hover {
+    background: rgba(0,0,0,0.2);
+}
+.lovense-action-chevron {
+    font-size: 0.7em;
+    opacity: 0.5;
+    transition: transform 0.15s;
+    width: 10px;
+    text-align: center;
+}
+.lovense-action-name {
+    font-weight: bold;
+    flex: 1;
+}
+.lovense-action-preview {
+    font-size: 0.8em;
+    opacity: 0.5;
+    font-style: italic;
+}
+.lovense-action-body {
+    padding: 8px;
+    background: rgba(0,0,0,0.05);
+}

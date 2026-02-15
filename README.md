@@ -8,13 +8,14 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 
 ## Features
 
-* **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
-* **Keyword Triggers:** Automatically vibrate when specific words (e.g., *shiver*, *throb*) appear in the chat.
+* **Zero Prompt Engineering:** No character card setup or AI prompting needed. The extension reads the AI's natural language and handles everything.
+* **Keyword-Driven Automation:** Customize keyword lists per action type. When the AI writes naturally, matching keywords trigger the right toy action automatically.
+* **Command Stacking:** Multiple actions can fire simultaneously. If the AI mentions both shivering and twisting, vibrate and rotate combine into one command.
+* **Intensity Modifiers:** Words like "gentle" or "harder" in the AI's text automatically adjust intensity up or down from your base setting.
 * **Full Toy Support:** Vibrate, Rotate, Pump, Thrust, Finger, Suction, Oscillate, Depth — supports the entire Lovense lineup.
-* **Explicit AI Control:** Give the AI precise control using tags like `[vibe:10]`, `[rotate:15]`, `[thrust:8]`.
-* **Preset Patterns:** Built-in dynamic patterns — Pulse, Wave, Fireworks, Earthquake.
+* **Preset Patterns:** Built-in dynamic patterns — Pulse, Wave, Fireworks, Earthquake — available via manual buttons.
 * **Toy Status:** See connected toy name, battery level, and connection status in the UI.
-* **Continuous Mode:** Commands run indefinitely until the next response changes them or the user stops manually.
+* **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
 * **Manual Control:** Test vibrations and presets directly from the extension UI.
 
 ---
@@ -75,47 +76,40 @@ The Lovense Developer Token is configured in the extension source code, not in t
 
 ---
 
-## Usage Guide
+## How It Works
 
-There are two ways the AI can control your toy:
+The extension scans each AI response for keywords you've configured and automatically triggers the matching toy actions. No character card changes or AI prompting needed — the AI just writes naturally.
 
-### 1. Keyword Triggers (Passive)
-In the extension settings, you can define a list of words (comma-separated).
-* **Default:** `shiver, shake, throb, pulse`
-* **Behavior:** If the AI's reply contains any of these words, the toy will vibrate at medium strength continuously until the next response or manual stop.
+### Keyword Triggers
+Each toy action type has its own keyword list and base intensity slider. When the AI's response contains a keyword, that action fires.
 
-### 2. Prompt Engineering (Active)
-For the best experience, instruct the AI to use the toy explicitly. Add the following to your **Character Card** (Scenario or Example Dialogue) or **Author's Note**:
-```
-[System Note: The user has a connected haptic device. You can control it by appending a hidden command at the very end of your message using HTML comment syntax: <!-- [command] -->
+**Default keyword mappings:**
 
-IMPORTANT: Never mention, reference, or acknowledge the device in your writing. Do not describe it, hint at it, or break immersion in any way. Just write your response naturally, then silently append the command at the bottom.
+| Action | Default Keywords | Intensity Range |
+|--------|-----------------|-----------------|
+| **Vibrate** | shiver, shake, throb, tingle, buzz, hum, tremble, quiver, shudder | 0-20 |
+| **Rotate** | twist, swirl, spin, grind, circle, gyrate, coil | 0-20 |
+| **Pump** | inflate, swell, expand, fill, bulge | 0-3 |
+| **Thrusting** | thrust, pound, slam, drive, plunge, ram, buck, lunge | 0-20 |
+| **Fingering** | curl, probe, press inside, hook | 0-20 |
+| **Suction** | suck, suction, latch, clamp, vacuum | 0-20 |
+| **Oscillate** | sway, rock, undulate, ripple, flutter | 0-20 |
+| **Depth** | hilt, bottom out, fully inside | 0-3 |
 
-Action tags (intensity control):
-<!-- [vibe:N] --> — Vibrate (0-20)
-<!-- [rotate:N] --> — Rotate (0-20)
-<!-- [pump:N] --> — Pump (0-3)
-<!-- [thrust:N] --> — Thrust (0-20)
-<!-- [finger:N] --> — Finger (0-20)
-<!-- [suction:N] --> — Suction (0-20)
-<!-- [oscillate:N] --> — Oscillate (0-20)
-<!-- [depth:N] --> — Depth (0-3)
+You can customize every keyword list and intensity slider in the extension settings.
 
-Preset tags (dynamic patterns, no intensity needed):
-<!-- [pulse] --> — Rhythmic pulsing
-<!-- [wave] --> — Gradual wave
-<!-- [fireworks] --> — Burst pattern
-<!-- [earthquake] --> — Intense rumble
+### Command Stacking
+Multiple keywords from different action types can trigger in the same message. The extension combines them into one command. For example, if the AI writes *"she shivers and twists against you"*, and you have "shiver" under Vibrate and "twist" under Rotate, the extension sends both Vibrate and Rotate simultaneously.
 
-The command runs continuously until your next message changes it.
-Use <!-- [vibe:0] --> to stop.
+### Intensity Modifiers
+The extension also scans for intensity modifier words that adjust the strength up or down from your base setting:
+* **Low modifiers** (default 0.5x): gentle, softly, light, tender, slow, faint, barely, subtle...
+* **High modifiers** (default 1.5x): hard, intense, rough, fast, furious, aggressive, powerful, fierce...
 
-Example response:
-"*She traces her fingers slowly down your chest, her breath warm against your neck.* 'You're not going anywhere tonight...' *she whispers, pressing closer.*
-<!-- [vibe:8] -->"
+For example, if your Vibrate base intensity is 10 and the AI writes *"she gently shivers"*, the extension sends Vibrate at 5 (10 x 0.5). If it writes *"she shivers intensely"*, it sends Vibrate at 15 (10 x 1.5).
 
-Only one command per message. Place it on the last line after your response.]
-```
+### Presets
+Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the extension UI. These are built-in Lovense patterns that run continuously until stopped
 
 ---
 
@@ -131,6 +125,8 @@ Only one command per message. Place it on the last line after your response.]
     * Ensure the toy icon in the app is green (connected).
 * **Some commands don't seem to work:**
     * Not all Lovense toys support every action. Vibrate works on all toys, but Rotate, Thrust, Finger, Suction, Oscillate, Pump, and Depth require specific toy models. Unsupported actions are silently ignored by the toy.
+* **Toy triggers too often / not enough:**
+    * Customize the keyword lists in the extension settings. Remove words that cause false triggers, or add more specific words for your preferred scenarios. Adjust the base intensity sliders to your preference.
 * **Mixed Content Warnings:**
     * This extension uses the official Cloud API (`https://api.lovense.com`), so it should **not** trigger mixed content warnings (HTTP vs HTTPS), making it safe for hosted instances.
 

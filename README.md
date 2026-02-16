@@ -5,7 +5,7 @@ A client-side extension for **SillyTavern** that allows AI characters to control
 This extension uses the **Lovense Cloud API**. This means it works well for:
 * ✅ Cloud-hosted multi-user SillyTavern instances (e.g., Render, HuggingFace, personal VPS)
 * ✅ Locally hosted SillyTavern
-<center><img width="100" height="100" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" /></center>
+<img width="100" height="100" center="true" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
 
 ## Features
 

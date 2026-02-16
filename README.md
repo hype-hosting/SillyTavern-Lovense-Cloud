@@ -137,6 +137,7 @@ Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the ex
 * [Lovense Discount](https://www.lovense.com/r/uo3mr6)
 * [Hype Discord](https://discord.gg/therealhype)
 * [Support Hype](https://ko-fi.com/hype)
+<img width="490" height="99" alt="support_me_on_kofi_dark" src="https://github.com/user-attachments/assets/feb38c74-967a-4beb-9701-a529fbb5cdee" />
 
 ## Credit
 

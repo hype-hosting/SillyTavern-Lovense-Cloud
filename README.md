@@ -8,9 +8,9 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 
 ## Links
 
-* **Supported Devices:** [Lovense Discount](https://www.lovense.com/r/uo3mr6)
-* **Discord Server:** [Hype Discord](https://discord.gg/therealhype)
-* **My Ko-fi:** [Support Hyperion](https://ko-fi.com/hype)
+* [**Lovense Discount**](https://www.lovense.com/r/uo3mr6) <img width="50" height="50" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
+* [**Hype Discord**](https://discord.gg/therealhype) <img width="50" height="50" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
+* [**Support Hyperion**](https://ko-fi.com/hype) <img width="50" height="50" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
 <img width="50" height="50" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
 
 ## Features

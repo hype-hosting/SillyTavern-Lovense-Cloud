@@ -6,11 +6,7 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 * ✅ Cloud-hosted multi-user SillyTavern instances (e.g., Render, HuggingFace, personal VPS)
 * ✅ Locally hosted SillyTavern
 
-## Links
-
-* [**Lovense Discount**](https://www.lovense.com/r/uo3mr6)
-* [**Hype Discord**](https://discord.gg/therealhype)
-* [**Support Hyperion**](https://ko-fi.com/hype)
+**Links:** [Lovense Discount](https://www.lovense.com/r/uo3mr6) / [Hype Discord](https://discord.gg/therealhype) / [Support Hyperion](https://ko-fi.com/hype)
 
 ## Features
 

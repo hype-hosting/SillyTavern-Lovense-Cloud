@@ -7,7 +7,7 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 * ✅ Locally hosted SillyTavern
 
 ## Features
-<img width="800" height="800" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
+<img width="100" height="100" alt="eaf1e30110004a348e2899119d0bbe6c" src="https://github.com/user-attachments/assets/b2adf3ea-3b26-4cb8-8fb9-17de432a30b4" />
 
 * **Zero Prompt Engineering:** No character card setup or AI prompting needed. The extension reads the AI's natural language and handles everything.
 * **Keyword-Driven Automation:** Customize keyword lists per action type. When the AI writes naturally, matching keywords trigger the right toy action automatically.

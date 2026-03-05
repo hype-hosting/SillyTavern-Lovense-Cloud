@@ -436,15 +436,6 @@ async function loadSettings() {
             setDockSide(newSide);
         });
 
-        // Click outside to dismiss
-        $(document).on("click", (e) => {
-            if (!panelOpen) return;
-            const $target = $(e.target);
-            if ($target.closest("#lovense-panel").length > 0) return;
-            if ($target.closest("#lovense-wand-btn").length > 0) return;
-            dismissPanel();
-        });
-
         // Escape key to dismiss
         $(document).on("keydown", (e) => {
             if (e.key === "Escape" && panelOpen) {

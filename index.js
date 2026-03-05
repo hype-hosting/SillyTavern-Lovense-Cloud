@@ -121,6 +121,7 @@ function initSettings() {
 
 function togglePanel() {
     const $panel = $("#lovense-panel");
+    console.log("[Lovense] togglePanel called, panelOpen:", panelOpen, "panel exists:", $panel.length);
     if (panelOpen) {
         dismissPanel();
     } else {
@@ -132,6 +133,10 @@ function togglePanel() {
         $panel.removeClass("lovense-hidden");
         $("#lovense-wand-btn").addClass("lovense-wand-active");
         panelOpen = true;
+        console.log("[Lovense] Panel opened, hidden class removed:", !$panel.hasClass("lovense-hidden"),
+            "computed display:", window.getComputedStyle($panel[0]).display,
+            "computed z-index:", window.getComputedStyle($panel[0]).zIndex,
+            "computed transform:", window.getComputedStyle($panel[0]).transform);
     }
 }
 
@@ -1039,10 +1044,15 @@ async function loadSettings() {
         // Mobile chatbar button — inject near ST's chatbar buttons
         const $chatbarBtn = $("#lovense-chatbar-btn");
         const $leftSendForm = $("#leftSendForm");
+        console.log("[Lovense] Chatbar injection: #leftSendForm found:", $leftSendForm.length > 0,
+            "chatbar btn exists:", $chatbarBtn.length > 0);
         if ($leftSendForm.length) {
             $chatbarBtn.detach().appendTo($leftSendForm);
         }
-        $chatbarBtn.on("click", togglePanel);
+        $chatbarBtn.on("click", function (e) {
+            e.stopPropagation(); // Prevent ST from swallowing the click
+            togglePanel();
+        });
 
         // Panel controls
         $("#lovense-panel-close").on("click", dismissPanel);

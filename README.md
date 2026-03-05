@@ -15,10 +15,13 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 * **Keyword-Driven Automation:** Customize keyword lists per action type. When the AI writes naturally, matching keywords trigger the right toy action automatically.
 * **Command Stacking:** Multiple actions can fire simultaneously. If the AI mentions both shivering and twisting, vibrate and rotate combine into one command.
 * **Intensity Modifiers:** Words like "gentle" or "harder" in the AI's text automatically adjust intensity up or down from your base setting.
-* **Full Toy Support:** Vibrate, Rotate, Pump, Thrust, Finger, Suction, Oscillate, Depth — supports the entire Lovense lineup.
-* **Preset Patterns:** Built-in dynamic patterns — Pulse, Wave, Fireworks, Earthquake — available via manual buttons.
-* **Toy Status:** See connected toy name, battery level, and connection status in the panel.
-* **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
+* **Full Toy Support:** Vibrate, Rotate, Pump, Thrust, Finger, Suction, Oscillate, Depth, Stroke — supports the entire Lovense lineup including Solace Pro.
+* **Dynamic Action Groups:** The panel automatically detects which actions your connected toy supports and dims unsupported ones, so you know exactly what works.
+* **Preset Patterns:** Built-in Lovense patterns — Pulse, Wave, Fireworks, Earthquake — available via manual buttons.
+* **Custom Pattern Engine:** Create your own intensity patterns with a visual bar editor. Built-in templates (Tease, Escalate, Waves, Chaos, Heartbeat) plus user-created patterns with optional keyword automation.
+* **Toy Status:** See connected toy name, battery level, supported functions, and connection status in the panel.
+* **Instant Pairing:** Connect your toy by scanning a QR code with the Lovense Remote app. Socket API provides instant detection when pairing completes.
+* **Floating Status Orb:** A glowing orb shows connection state at a glance — dims when disconnected, breathes when connected, spins while toys are active.
 * **Manual Control:** Test vibrations and presets directly from the panel.
 
 ---
@@ -102,6 +105,7 @@ Each toy action type has its own keyword list and base intensity slider. When th
 | **Suction** | suck, suction, latch, clamp, vacuum | 0-20 |
 | **Oscillate** | sway, rock, undulate, ripple, flutter | 0-20 |
 | **Depth** | hilt, bottom out, fully inside | 0-3 |
+| **Stroke** | stroke, glide, slide | 0-100 |
 
 You can customize every keyword list and intensity slider in the panel.
 
@@ -118,6 +122,14 @@ For example, if your Vibrate base intensity is 10 and the AI writes *"she gently
 ### Presets
 Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the panel. These are built-in Lovense patterns that run continuously until stopped.
 
+### Custom Patterns
+Beyond the built-in presets, the extension includes a **Pattern Engine** powered by the Lovense Pattern API:
+
+* **Built-in Templates:** Tease, Escalate, Waves, Chaos, and Heartbeat — one-click buttons that send custom intensity sequences.
+* **Visual Bar Editor:** Create your own patterns by clicking and dragging bars to set intensity at each step. Configure the interval (speed), which action types to control, and optionally assign keywords for automation.
+* **Keyword Automation:** Custom patterns can have keywords assigned. When the AI's text matches a pattern keyword, the pattern fires automatically (taking priority over regular action keywords).
+* Patterns use the Lovense Pattern API, which cycles through up to 50 intensity values at a configurable interval (100–1000ms).
+
 ---
 
 ## Troubleshooting
@@ -131,7 +143,7 @@ Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the pa
     * Make sure the **Lovense Remote App** is open and running in the foreground on your phone.
     * Ensure the toy icon in the app is green (connected).
 * **Some commands don't seem to work:**
-    * Not all Lovense toys support every action. Vibrate works on all toys, but Rotate, Thrust, Finger, Suction, Oscillate, Pump, and Depth require specific toy models. Unsupported actions are silently ignored by the toy.
+    * Not all Lovense toys support every action. Vibrate works on all toys, but Rotate, Thrust, Finger, Suction, Oscillate, Pump, Depth, and Stroke require specific toy models. When a toy is connected, the panel dims unsupported action groups and shows each toy's supported functions in the status area.
 * **Can't find the extension:**
     * Click the **wand icon** (✨) in the chat input bar. Lovense Cloud appears in the dropdown menu, not in the Extensions sidebar.
 * **Toy triggers too often / not enough:**

@@ -9,7 +9,8 @@
     --lovense-accent: #7c6bde;
     --lovense-accent-soft: rgba(124, 107, 222, 0.15);
     --lovense-accent-glow: rgba(124, 107, 222, 0.4);
-    --lovense-panel-width: 340px;
+    --lovense-panel-width: 400px;
+    --lovense-top-offset: 42px;
 }
 
 /* ── Keyframe Animations ──────────────────────────────────── */
@@ -55,7 +56,7 @@
 /* ── Panel Container ───────────────────────────────────── */
 .lovense-panel {
     position: fixed;
-    top: 10px;
+    top: var(--lovense-top-offset);
     bottom: 10px;
     width: var(--lovense-panel-width);
     max-width: 90vw;
@@ -95,29 +96,11 @@
         transparent 100%
     );
     background-size: 200% 200%;
-    animation: lovense-shimmer 10s linear infinite;
+    animation: lovense-shimmer 28s linear infinite;
     pointer-events: none;
     z-index: 0;
 }
 
-/* Top-edge refraction highlight */
-.lovense-panel::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.15),
-        rgba(255, 255, 255, 0.2),
-        transparent
-    );
-    pointer-events: none;
-    z-index: 0;
-}
 
 /* ── Docking ───────────────────────────────────────────── */
 .lovense-panel.lovense-dock-right {
@@ -559,7 +542,7 @@
 .lovense-panel input[type="range"]::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .lovense-panel input[type="range"]::-webkit-slider-thumb {
@@ -582,7 +565,7 @@
 .lovense-panel input[type="range"]::-moz-range-track {
     height: 4px;
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
     border: none;
 }
 
@@ -650,23 +633,140 @@
 /* ── Footer Links ──────────────────────────────────────── */
 .lovense-links {
     display: flex;
-    flex-direction: column;
-    gap: 5px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
 }
 
 .lovense-link-btn {
-    text-align: center;
     text-decoration: none;
-    display: block;
-    font-size: 0.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 0.85em;
+    border-radius: 6px;
 }
 
-/* ── Version ───────────────────────────────────────────── */
+.lovense-link-btn i {
+    margin: 0;
+}
+
+/* ── Version (inline in header) ───────────────────────── */
 .lovense-version {
-    text-align: center;
-    font-size: 0.7em;
-    opacity: 0.35;
-    margin-top: 12px;
+    font-size: 0.65em;
+    opacity: 0.3;
+    margin-left: 4px;
+    font-weight: normal;
+}
+
+/* ── QR Collapsible Drawer ────────────────────────────── */
+.lovense-qr-drawer {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+
+.lovense-qr-drawer.lovense-qr-collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+.lovense-qr-drawer:not(.lovense-qr-collapsed) {
+    max-height: 300px;
+    opacity: 1;
+}
+
+.lovense-qr-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.75em;
+    opacity: 0.5;
+    padding: 4px 0;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+    user-select: none;
+}
+
+.lovense-qr-toggle:hover {
+    opacity: 1;
+}
+
+.lovense-qr-toggle i {
+    font-size: 0.8em;
+    transition: transform 0.2s;
+}
+
+/* ── Collapsed Mini-Bar ─────────────────────────────────── */
+.lovense-mini-bar {
+    position: fixed;
+    bottom: 45px;
+    left: 0;
+    right: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    z-index: 999;
+    background: var(--lovense-glass-bg);
+    border-top: 1px solid var(--lovense-glass-border);
+    backdrop-filter: blur(var(--lovense-glass-blur)) saturate(1.2);
+    -webkit-backdrop-filter: blur(var(--lovense-glass-blur)) saturate(1.2);
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.lovense-mini-bar.lovense-mini-hidden {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lovense-mini-bar-label {
+    font-size: 0.75em;
+    opacity: 0.6;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lovense-mini-bar-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.lovense-mini-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.8em;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.04);
+    color: inherit;
+}
+
+.lovense-mini-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lovense-mini-btn.lovense-stop-btn {
+    background: rgba(200, 50, 50, 0.2);
+    border-color: rgba(200, 50, 50, 0.15);
+}
+
+.lovense-mini-expand {
+    color: var(--lovense-accent);
 }
 
 /* ── Responsive ────────────────────────────────────────── */

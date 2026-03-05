@@ -94,6 +94,8 @@ function togglePanel() {
     if (panelOpen) {
         dismissPanel();
     } else {
+        // Hide mini-bar when opening panel
+        $("#lovense-mini-bar").addClass("lovense-mini-hidden");
         $panel.css("display", "flex");
         // Force reflow before removing hidden class for animation
         $panel[0].offsetHeight;
@@ -109,10 +111,11 @@ function dismissPanel() {
     $("#lovense-wand-btn").removeClass("lovense-wand-active");
     panelOpen = false;
 
-    // Hide display after transition completes
+    // Hide display after transition completes, then show mini-bar
     setTimeout(() => {
         if (!panelOpen) {
             $panel.css("display", "none");
+            $("#lovense-mini-bar").removeClass("lovense-mini-hidden");
         }
     }, 300);
 }
@@ -129,6 +132,10 @@ function setDockSide(side) {
 
     $panel.removeClass("lovense-dock-left lovense-dock-right");
     $panel.addClass(`lovense-dock-${side}`);
+
+    // Update dock toggle arrow direction
+    $("#lovense-dock-toggle i").removeClass("fa-chevron-left fa-chevron-right")
+        .addClass(side === "right" ? "fa-chevron-left" : "fa-chevron-right");
 
     settings.dockSide = side;
     saveSettings();
@@ -172,6 +179,10 @@ function updateStatusDot(state) {
 
     const titles = { disconnected: "Disconnected", connected: "Connected", sending: "Sending..." };
     $dot.attr("title", titles[state] || "");
+
+    // Mirror status to mini-bar dot
+    $("#lovense-mini-dot").removeClass("lovense-status-disconnected lovense-status-connected lovense-status-sending")
+        .addClass(`lovense-status-${state}`);
 
     if (state !== "sending") {
         lastStatusState = state;
@@ -247,6 +258,12 @@ async function getQrCode() {
                     </div>
                 `);
                 toastr.success("New QR Code received.");
+                // Show QR drawer open and enable toggle
+                $("#lovense-qr-drawer").removeClass("lovense-qr-collapsed");
+                const $qrToggle = $("#lovense-qr-toggle");
+                $qrToggle.css("display", "");
+                $qrToggle.find("span").text("Hide QR Code");
+                $qrToggle.find("i").css("transform", "rotate(180deg)");
                 // Auto-check toy status after a delay (user needs time to scan)
                 setTimeout(async () => {
                     const status = await getToyStatus();
@@ -383,7 +400,8 @@ function renderToyStatus(data) {
     const container = $("#lovense-toy-status");
     if (!container.length) return;
 
-    if (!data || data.code !== 200 || !data.data || !data.data.toys) {
+    console.log("[Lovense] renderToyStatus raw:", JSON.stringify(data));
+    if (!data || (data.code != 200 && data.result !== true) || !data.data || !data.data.toys) {
         container.html('<span class="lovense-placeholder">No toys detected. Scan QR and connect first.</span>');
         updateStatusDot("disconnected");
         return;
@@ -600,6 +618,19 @@ async function loadSettings() {
             saveSettings();
         });
 
+        // Set initial dock toggle icon direction
+        $("#lovense-dock-toggle i").removeClass("fa-chevron-left fa-chevron-right fa-arrow-right-arrow-left")
+            .addClass(settings.dockSide === "right" ? "fa-chevron-left" : "fa-chevron-right");
+
+        // QR drawer toggle
+        $("#lovense-qr-toggle").on("click", function () {
+            const $drawer = $("#lovense-qr-drawer");
+            const isCollapsed = $drawer.hasClass("lovense-qr-collapsed");
+            $drawer.toggleClass("lovense-qr-collapsed");
+            $(this).find("span").text(isCollapsed ? "Hide QR Code" : "Show QR Code");
+            $(this).find("i").css("transform", isCollapsed ? "rotate(180deg)" : "rotate(0deg)");
+        });
+
         // Connection & manual controls with button flash
         $("#lovense-get-qr").on("click", function () { flashButton($(this)); getQrCode(); });
         $("#lovense-low").on("click", function () { flashButton($(this)); sendCommand("Vibrate:5"); });
@@ -619,6 +650,25 @@ async function loadSettings() {
             $("#lovense-toy-status").html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
             const status = await getToyStatus();
             renderToyStatus(status);
+        });
+
+        // Mini-bar controls
+        $("#lovense-mini-expand").on("click", togglePanel);
+        $("#lovense-mini-vibrate").on("click", function () { sendCommand("Vibrate:10"); });
+        $("#lovense-mini-stop").on("click", function () { sendCommand("Stop"); });
+        $("#lovense-mini-enable").prop("checked", settings.isEnabled);
+        $("#lovense-mini-enable").parent().on("click", function () {
+            const $cb = $("#lovense-mini-enable");
+            const newVal = !$cb.prop("checked");
+            $cb.prop("checked", newVal);
+            settings.isEnabled = newVal;
+            $("#lovense-enable").prop("checked", newVal);
+            saveSettings();
+        });
+
+        // Sync main enable toggle to mini-bar
+        $("#lovense-enable").on("change", function () {
+            $("#lovense-mini-enable").prop("checked", settings.isEnabled);
         });
 
         console.log("[Lovense] UI Loaded Successfully.");

@@ -4,6 +4,7 @@
         <div class="lovense-panel-title">
             <i class="fa-solid fa-satellite-dish"></i>
             <span>Lovense Cloud</span>
+            <span id="lovense-status-dot" class="lovense-status-dot lovense-status-disconnected" title="Disconnected"></span>
         </div>
         <div class="lovense-panel-controls">
             <div id="lovense-dock-toggle" class="lovense-panel-btn" title="Switch dock side">
@@ -18,9 +19,16 @@
     <div class="lovense-panel-body">
 
         <label class="lovense-toggle-row">
-            <input type="checkbox" id="lovense-enable" class="checkbox">
             <span>Enable Automation</span>
+            <input type="checkbox" id="lovense-enable" class="lovense-toggle-input">
+            <span class="lovense-toggle-slider"></span>
         </label>
+
+        <!-- Activity Feed -->
+        <div id="lovense-activity" class="lovense-activity">
+            <i class="fa-solid fa-bolt lovense-activity-icon"></i>
+            <span class="lovense-activity-text">No activity yet</span>
+        </div>
 
         <!-- Connection -->
         <div class="lovense-section">
@@ -217,7 +225,7 @@
             </a>
         </div>
 
-        <div class="lovense-version">Lovense Cloud v3.0.0 by Hyperion</div>
+        <div class="lovense-version">Lovense Cloud v3.1.0 by Hyperion</div>
 
     </div>
 </div>

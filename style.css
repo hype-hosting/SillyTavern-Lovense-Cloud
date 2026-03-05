@@ -8,7 +8,48 @@
     --lovense-glass-glow: rgba(124, 107, 222, 0.15);
     --lovense-accent: #7c6bde;
     --lovense-accent-soft: rgba(124, 107, 222, 0.15);
+    --lovense-accent-glow: rgba(124, 107, 222, 0.4);
     --lovense-panel-width: 340px;
+}
+
+/* ── Keyframe Animations ──────────────────────────────────── */
+
+/* Slow shimmer sweep — light drifting across glass */
+@keyframes lovense-shimmer {
+    0%   { background-position: 200% 200%; }
+    100% { background-position: -200% -200%; }
+}
+
+/* Subtle breathing glow on panel border */
+@keyframes lovense-glow-breathe {
+    0%, 100% { box-shadow: var(--lovense-glass-shadow), 0 0 20px rgba(124, 107, 222, 0.10); }
+    50%      { box-shadow: var(--lovense-glass-shadow), 0 0 28px rgba(124, 107, 222, 0.25); }
+}
+
+/* Command pulse — brief accent flash on panel border */
+@keyframes lovense-command-pulse {
+    0%   { box-shadow: var(--lovense-glass-shadow), 0 0 20px rgba(124, 107, 222, 0.15); }
+    30%  { box-shadow: var(--lovense-glass-shadow), 0 0 40px rgba(124, 107, 222, 0.55), 0 0 80px rgba(124, 107, 222, 0.2); }
+    100% { box-shadow: var(--lovense-glass-shadow), 0 0 20px rgba(124, 107, 222, 0.15); }
+}
+
+/* Button click flash */
+@keyframes lovense-btn-pop {
+    0%   { box-shadow: 0 0 0 0 rgba(124, 107, 222, 0.4); }
+    50%  { box-shadow: 0 0 12px 2px rgba(124, 107, 222, 0.3); }
+    100% { box-shadow: 0 0 0 0 rgba(124, 107, 222, 0); }
+}
+
+/* Status dot pulse */
+@keyframes lovense-dot-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+    50%      { opacity: 0.5; box-shadow: 0 0 8px currentColor; }
+}
+
+/* Activity feed fade-in */
+@keyframes lovense-activity-in {
+    0%   { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Panel Container ───────────────────────────────────── */
@@ -24,27 +65,37 @@
 
     background: var(--lovense-glass-bg);
     border: 1px solid var(--lovense-glass-border);
-    box-shadow: var(--lovense-glass-shadow), 0 0 20px var(--lovense-glass-glow);
     backdrop-filter: blur(var(--lovense-glass-blur)) saturate(1.2);
     -webkit-backdrop-filter: blur(var(--lovense-glass-blur)) saturate(1.2);
+
+    /* Breathing glow — runs continuously */
+    animation: lovense-glow-breathe 4s ease-in-out infinite;
 
     transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 200ms ease;
     overflow: hidden;
 }
 
-/* Diagonal shimmer */
+/* Command pulse override — applied briefly via JS */
+.lovense-panel.lovense-pulse {
+    animation: lovense-command-pulse 600ms ease-out 1;
+}
+
+/* Animated diagonal shimmer */
 .lovense-panel::before {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.05) 0%,
-        transparent 40%,
-        transparent 60%,
-        rgba(255, 255, 255, 0.03) 100%
+        rgba(255, 255, 255, 0.06) 0%,
+        transparent 30%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.04) 70%,
+        transparent 100%
     );
+    background-size: 200% 200%;
+    animation: lovense-shimmer 10s linear infinite;
     pointer-events: none;
     z-index: 0;
 }
@@ -119,6 +170,7 @@
 
 .lovense-panel-title i {
     color: var(--lovense-accent);
+    text-shadow: 0 0 8px rgba(124, 107, 222, 0.4);
 }
 
 .lovense-panel-controls {
@@ -141,6 +193,32 @@
 .lovense-panel-btn:hover {
     opacity: 1;
     background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Connection Status Dot ─────────────────────────────── */
+.lovense-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.lovense-status-dot.lovense-status-disconnected {
+    background: rgba(180, 80, 80, 0.6);
+    box-shadow: 0 0 4px rgba(180, 80, 80, 0.3);
+}
+
+.lovense-status-dot.lovense-status-connected {
+    background: #4caf50;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+}
+
+.lovense-status-dot.lovense-status-sending {
+    background: var(--lovense-accent);
+    color: var(--lovense-accent);
+    animation: lovense-dot-pulse 0.8s ease-in-out infinite;
 }
 
 /* ── Panel Body (scrollable) ───────────────────────────── */
@@ -166,6 +244,66 @@
     border-radius: 2px;
 }
 
+/* ── Custom Toggle Switch ─────────────────────────────── */
+.lovense-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lovense-toggle-row > span:first-child {
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.lovense-toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.lovense-toggle-slider {
+    position: relative;
+    width: 38px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    flex-shrink: 0;
+}
+
+.lovense-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s;
+}
+
+.lovense-toggle-input:checked + .lovense-toggle-slider {
+    background: var(--lovense-accent);
+    border-color: rgba(124, 107, 222, 0.4);
+    box-shadow: 0 0 10px rgba(124, 107, 222, 0.3);
+}
+
+.lovense-toggle-input:checked + .lovense-toggle-slider::after {
+    transform: translateX(18px);
+    background: #fff;
+}
+
 /* ── Sections ──────────────────────────────────────────── */
 .lovense-section {
     margin-bottom: 14px;
@@ -188,6 +326,10 @@
     margin-bottom: 8px;
 }
 
+.lovense-section-label i {
+    text-shadow: 0 0 6px rgba(124, 107, 222, 0.3);
+}
+
 .lovense-section-label.lovense-sublabel {
     margin-top: 10px;
 }
@@ -198,20 +340,50 @@
     margin-bottom: 8px;
 }
 
-/* ── Toggle Row ────────────────────────────────────────── */
-.lovense-toggle-row {
+/* ── Activity Feed ────────────────────────────────────── */
+.lovense-activity {
     display: flex;
     align-items: center;
-    gap: 10px;
-    cursor: pointer;
+    gap: 8px;
+    padding: 8px 10px;
     margin-bottom: 14px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    font-size: 0.75em;
+    min-height: 32px;
 }
 
-.lovense-toggle-row span {
-    font-weight: bold;
+.lovense-activity-icon {
+    color: var(--lovense-accent);
     font-size: 0.9em;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.lovense-activity-text {
+    flex: 1;
+    opacity: 0.5;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lovense-activity-text.lovense-activity-active {
+    opacity: 0.85;
+    font-style: normal;
+}
+
+.lovense-activity-time {
+    opacity: 0.35;
+    font-size: 0.9em;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.lovense-activity.lovense-activity-flash {
+    animation: lovense-activity-in 300ms ease-out;
 }
 
 /* ── QR & Status Areas ─────────────────────────────────── */
@@ -242,10 +414,115 @@
     border: 4px solid white;
 }
 
+/* ── Toy Status Glass Cards ────────────────────────────── */
+.lovense-toy-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.lovense-toy-card {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lovense-toy-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lovense-toy-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.lovense-toy-dot.connected {
+    background: #4caf50;
+    box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
+}
+
+.lovense-toy-dot.disconnected {
+    background: rgba(180, 80, 80, 0.6);
+    box-shadow: 0 0 4px rgba(180, 80, 80, 0.3);
+}
+
+.lovense-toy-name {
+    font-weight: bold;
+    font-size: 0.85em;
+    text-transform: capitalize;
+    flex: 1;
+}
+
+.lovense-toy-battery-label {
+    font-size: 0.75em;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lovense-toy-battery {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lovense-toy-battery-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.lovense-toy-battery-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease, background 0.5s ease;
+}
+
+.lovense-toy-battery-text {
+    font-size: 0.75em;
+    opacity: 0.6;
+    min-width: 28px;
+    text-align: right;
+}
+
 /* ── Buttons ───────────────────────────────────────────── */
 .lovense-panel .menu_button {
     width: 100%;
     margin-top: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    transition: background 0.15s, box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+}
+
+.lovense-panel .menu_button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(124, 107, 222, 0.25);
+    box-shadow: 0 0 12px rgba(124, 107, 222, 0.15);
+    transform: translateY(-1px);
+}
+
+.lovense-panel .menu_button:active {
+    transform: scale(0.97) translateY(0);
+    background: rgba(124, 107, 222, 0.12);
+}
+
+/* Button click flash animation */
+.lovense-panel .menu_button.lovense-btn-flash {
+    animation: lovense-btn-pop 300ms ease-out;
 }
 
 .lovense-btn-grid {
@@ -261,6 +538,65 @@
 
 .lovense-stop-btn {
     background-color: rgba(200, 50, 50, 0.3) !important;
+    border-color: rgba(200, 50, 50, 0.2) !important;
+}
+
+.lovense-stop-btn:hover {
+    background-color: rgba(200, 50, 50, 0.45) !important;
+    border-color: rgba(200, 50, 50, 0.35) !important;
+    box-shadow: 0 0 12px rgba(200, 50, 50, 0.2) !important;
+}
+
+/* ── Custom Range Sliders ─────────────────────────────── */
+.lovense-panel input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    height: 20px;
+}
+
+.lovense-panel input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lovense-panel input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid var(--lovense-accent);
+    box-shadow: 0 0 6px rgba(124, 107, 222, 0.3);
+    margin-top: -5px;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.lovense-panel input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 10px rgba(124, 107, 222, 0.5);
+    transform: scale(1.15);
+}
+
+.lovense-panel input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+}
+
+.lovense-panel input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid var(--lovense-accent);
+    box-shadow: 0 0 6px rgba(124, 107, 222, 0.3);
+}
+
+.lovense-panel input[type="range"]::-moz-range-thumb:hover {
+    box-shadow: 0 0 10px rgba(124, 107, 222, 0.5);
 }
 
 /* ── Action Groups (collapsible) ───────────────────────── */

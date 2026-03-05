@@ -235,14 +235,13 @@
     </div>
 </div>
 
-<!-- Collapsed Mini-Bar (shown when panel is closed) -->
-<div id="lovense-mini-bar" class="lovense-mini-bar lovense-mini-hidden">
-    <span id="lovense-mini-dot" class="lovense-status-dot lovense-status-disconnected" title="Lovense"></span>
-    <label class="lovense-mini-btn" title="Enable/Disable">
-        <input type="checkbox" id="lovense-mini-enable" style="display:none;">
-        <i class="fa-solid fa-power-off"></i>
-    </label>
-    <button id="lovense-mini-vibrate" class="lovense-mini-btn" title="Vibrate"><i class="fa-solid fa-volume-high"></i></button>
-    <button id="lovense-mini-stop" class="lovense-mini-btn lovense-stop-btn" title="Stop"><i class="fa-solid fa-stop"></i></button>
-    <button id="lovense-mini-expand" class="lovense-mini-btn lovense-mini-expand" title="Open Panel"><i class="fa-solid fa-chevron-up"></i></button>
+<!-- Floating Orb (status indicator + panel toggle) -->
+<div id="lovense-orb" class="lovense-orb lovense-orb-disconnected">
+    <div class="lovense-orb-ring"></div>
+    <div class="lovense-orb-body">
+        <i class="fa-solid fa-satellite-dish"></i>
+    </div>
 </div>
+
+<!-- Ambient Edge Glow (active when toys are running) -->
+<div id="lovense-ambient" class="lovense-ambient"></div>

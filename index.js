@@ -36,6 +36,7 @@ const defaultSettings = {
 // Populated by initSettings() once SillyTavern is ready.
 let settings = {};
 let panelOpen = false;
+let lastStatusState = "disconnected"; // Track connection state for status dot revert
 
 function initSettings() {
     const context = SillyTavern.getContext();
@@ -140,6 +141,67 @@ function setDockSide(side) {
     }
 }
 
+// --- VISUAL FEEDBACK ---
+
+function triggerCommandPulse() {
+    const $panel = $("#lovense-panel");
+    $panel.removeClass("lovense-pulse");
+    // Force reflow to restart animation
+    $panel[0].offsetHeight;
+    $panel.addClass("lovense-pulse");
+    $panel.one("animationend", () => {
+        $panel.removeClass("lovense-pulse");
+    });
+}
+
+function flashButton($btn) {
+    $btn.removeClass("lovense-btn-flash");
+    $btn[0].offsetHeight;
+    $btn.addClass("lovense-btn-flash");
+    $btn.one("animationend", () => {
+        $btn.removeClass("lovense-btn-flash");
+    });
+}
+
+function updateStatusDot(state) {
+    const $dot = $("#lovense-status-dot");
+    if (!$dot.length) return;
+
+    $dot.removeClass("lovense-status-disconnected lovense-status-connected lovense-status-sending");
+    $dot.addClass(`lovense-status-${state}`);
+
+    const titles = { disconnected: "Disconnected", connected: "Connected", sending: "Sending..." };
+    $dot.attr("title", titles[state] || "");
+
+    if (state !== "sending") {
+        lastStatusState = state;
+    }
+}
+
+function updateActivityFeed(description) {
+    const $container = $("#lovense-activity");
+    const $text = $container.find(".lovense-activity-text");
+    const $time = $container.find(".lovense-activity-time");
+
+    if (!$text.length) return;
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+    $text.text(description).addClass("lovense-activity-active");
+
+    if ($time.length) {
+        $time.text(timeStr);
+    } else {
+        $container.append(`<span class="lovense-activity-time">${timeStr}</span>`);
+    }
+
+    // Replay fade-in animation
+    $container.removeClass("lovense-activity-flash");
+    $container[0].offsetHeight;
+    $container.addClass("lovense-activity-flash");
+}
+
 // --- LOVENSE API FUNCTIONS ---
 
 async function getQrCode() {
@@ -228,6 +290,11 @@ async function sendCommand(action) {
 
     console.log(`[Lovense] Sending: ${action} (continuous)`);
 
+    // Visual feedback
+    updateStatusDot("sending");
+    updateActivityFeed(action === "Stop" ? "Stop" : action);
+    triggerCommandPulse();
+
     try {
         const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
             method: "POST",
@@ -239,6 +306,9 @@ async function sendCommand(action) {
     } catch (e) {
         console.error("[Lovense] Command Failed:", e);
     }
+
+    // Revert status dot after brief pulse
+    setTimeout(() => updateStatusDot(lastStatusState), 1000);
 }
 
 // name: one of "pulse", "wave", "fireworks", "earthquake".
@@ -256,6 +326,11 @@ async function sendPreset(name) {
 
     console.log(`[Lovense] Sending preset: ${name} (continuous)`);
 
+    // Visual feedback
+    updateStatusDot("sending");
+    updateActivityFeed(`Preset: ${name}`);
+    triggerCommandPulse();
+
     try {
         const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
             method: "POST",
@@ -267,6 +342,9 @@ async function sendPreset(name) {
     } catch (e) {
         console.error("[Lovense] Preset Failed:", e);
     }
+
+    // Revert status dot after brief pulse
+    setTimeout(() => updateStatusDot(lastStatusState), 1000);
 }
 
 // Queries connected toys and returns their info.
@@ -295,12 +373,19 @@ async function getToyStatus() {
     }
 }
 
+function getBatteryColor(level) {
+    if (level > 60) return "#4caf50";
+    if (level > 25) return "#ff9800";
+    return "#f44336";
+}
+
 function renderToyStatus(data) {
     const container = $("#lovense-toy-status");
     if (!container.length) return;
 
     if (!data || data.code !== 200 || !data.data || !data.data.toys) {
-        container.html('<span style="opacity:0.5; font-style:italic; font-size:0.85em;">No toys detected. Scan QR and connect first.</span>');
+        container.html('<span class="lovense-placeholder">No toys detected. Scan QR and connect first.</span>');
+        updateStatusDot("disconnected");
         return;
     }
 
@@ -308,30 +393,46 @@ function renderToyStatus(data) {
     try {
         toys = typeof data.data.toys === "string" ? JSON.parse(data.data.toys) : data.data.toys;
     } catch (e) {
-        container.html('<span style="opacity:0.5; font-style:italic; font-size:0.85em;">Could not parse toy data.</span>');
+        container.html('<span class="lovense-placeholder">Could not parse toy data.</span>');
+        updateStatusDot("disconnected");
         return;
     }
 
     const entries = Object.values(toys);
     if (entries.length === 0) {
-        container.html('<span style="opacity:0.5; font-style:italic; font-size:0.85em;">No toys connected.</span>');
+        container.html('<span class="lovense-placeholder">No toys connected.</span>');
+        updateStatusDot("disconnected");
         return;
     }
 
-    const html = entries.map(toy => {
-        const status = toy.status === "1" || toy.status === 1;
-        const icon = status ? "fa-circle-check" : "fa-circle-xmark";
-        const color = status ? "#4caf50" : "#f44336";
+    let hasConnected = false;
+
+    const html = '<div class="lovense-toy-cards">' + entries.map(toy => {
+        const connected = toy.status === "1" || toy.status === 1;
+        if (connected) hasConnected = true;
         const name = toy.nickName || toy.name || "Unknown";
-        const battery = toy.battery != null ? `${toy.battery}%` : "?";
-        return `<div style="display:flex; align-items:center; gap:8px; padding:4px 0;">
-            <i class="fa-solid ${icon}" style="color:${color};"></i>
-            <span style="font-weight:bold; text-transform:capitalize;">${name}</span>
-            <span style="opacity:0.6; font-size:0.85em;"><i class="fa-solid fa-battery-half"></i> ${battery}</span>
+        const battery = toy.battery != null ? parseInt(toy.battery) : null;
+        const batteryDisplay = battery != null ? `${battery}%` : "?";
+        const batteryWidth = battery != null ? Math.max(2, battery) : 0;
+        const batteryColor = battery != null ? getBatteryColor(battery) : "rgba(255,255,255,0.2)";
+
+        return `<div class="lovense-toy-card">
+            <div class="lovense-toy-card-header">
+                <span class="lovense-toy-dot ${connected ? "connected" : "disconnected"}"></span>
+                <span class="lovense-toy-name">${name}</span>
+                <span class="lovense-toy-battery-label"><i class="fa-solid fa-battery-half"></i></span>
+            </div>
+            <div class="lovense-toy-battery">
+                <div class="lovense-toy-battery-track">
+                    <div class="lovense-toy-battery-bar" style="width: ${batteryWidth}%; background: ${batteryColor};"></div>
+                </div>
+                <span class="lovense-toy-battery-text">${batteryDisplay}</span>
+            </div>
         </div>`;
-    }).join("");
+    }).join("") + '</div>';
 
     container.html(html);
+    updateStatusDot(hasConnected ? "connected" : "disconnected");
 }
 
 // --- AUTOMATION ---
@@ -499,21 +600,22 @@ async function loadSettings() {
             saveSettings();
         });
 
-        // Connection & manual controls
-        $("#lovense-get-qr").on("click", getQrCode);
-        $("#lovense-low").on("click", () => sendCommand("Vibrate:5"));
-        $("#lovense-med").on("click", () => sendCommand("Vibrate:10"));
-        $("#lovense-high").on("click", () => sendCommand("Vibrate:20"));
-        $("#lovense-stop").on("click", () => sendCommand("Stop"));
+        // Connection & manual controls with button flash
+        $("#lovense-get-qr").on("click", function () { flashButton($(this)); getQrCode(); });
+        $("#lovense-low").on("click", function () { flashButton($(this)); sendCommand("Vibrate:5"); });
+        $("#lovense-med").on("click", function () { flashButton($(this)); sendCommand("Vibrate:10"); });
+        $("#lovense-high").on("click", function () { flashButton($(this)); sendCommand("Vibrate:20"); });
+        $("#lovense-stop").on("click", function () { flashButton($(this)); sendCommand("Stop"); });
 
-        // Preset buttons
-        $("#lovense-pulse").on("click", () => sendPreset("pulse"));
-        $("#lovense-wave").on("click", () => sendPreset("wave"));
-        $("#lovense-fireworks").on("click", () => sendPreset("fireworks"));
-        $("#lovense-earthquake").on("click", () => sendPreset("earthquake"));
+        // Preset buttons with flash
+        $("#lovense-pulse").on("click", function () { flashButton($(this)); sendPreset("pulse"); });
+        $("#lovense-wave").on("click", function () { flashButton($(this)); sendPreset("wave"); });
+        $("#lovense-fireworks").on("click", function () { flashButton($(this)); sendPreset("fireworks"); });
+        $("#lovense-earthquake").on("click", function () { flashButton($(this)); sendPreset("earthquake"); });
 
         // Toy status
-        $("#lovense-refresh-status").on("click", async () => {
+        $("#lovense-refresh-status").on("click", async function () {
+            flashButton($(this));
             $("#lovense-toy-status").html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
             const status = await getToyStatus();
             renderToyStatus(status);

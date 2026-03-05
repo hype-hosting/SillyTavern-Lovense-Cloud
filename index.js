@@ -94,8 +94,8 @@ function togglePanel() {
     if (panelOpen) {
         dismissPanel();
     } else {
-        // Hide mini-bar when opening panel
-        $("#lovense-mini-bar").addClass("lovense-mini-hidden");
+        // Dim orb when opening panel
+        $("#lovense-orb").addClass("lovense-orb-panel-open");
         $panel.css("display", "flex");
         // Force reflow before removing hidden class for animation
         $panel[0].offsetHeight;
@@ -111,11 +111,11 @@ function dismissPanel() {
     $("#lovense-wand-btn").removeClass("lovense-wand-active");
     panelOpen = false;
 
-    // Hide display after transition completes, then show mini-bar
+    // Hide display after transition completes, restore orb
     setTimeout(() => {
         if (!panelOpen) {
             $panel.css("display", "none");
-            $("#lovense-mini-bar").removeClass("lovense-mini-hidden");
+            $("#lovense-orb").removeClass("lovense-orb-panel-open");
         }
     }, 300);
 }
@@ -136,6 +136,9 @@ function setDockSide(side) {
     // Update dock toggle arrow direction
     $("#lovense-dock-toggle i").removeClass("fa-chevron-left fa-chevron-right")
         .addClass(side === "right" ? "fa-chevron-left" : "fa-chevron-right");
+
+    // Move orb to match dock side
+    $("#lovense-orb").toggleClass("lovense-orb-dock-left", side === "left");
 
     settings.dockSide = side;
     saveSettings();
@@ -180,9 +183,9 @@ function updateStatusDot(state) {
     const titles = { disconnected: "Disconnected", connected: "Connected", sending: "Sending..." };
     $dot.attr("title", titles[state] || "");
 
-    // Mirror status to mini-bar dot
-    $("#lovense-mini-dot").removeClass("lovense-status-disconnected lovense-status-connected lovense-status-sending")
-        .addClass(`lovense-status-${state}`);
+    // Update orb state to match connection status
+    const orbState = state === "sending" ? "active" : state;
+    updateOrbState(orbState);
 
     if (state !== "sending") {
         lastStatusState = state;
@@ -211,6 +214,28 @@ function updateActivityFeed(description) {
     $container.removeClass("lovense-activity-flash");
     $container[0].offsetHeight;
     $container.addClass("lovense-activity-flash");
+}
+
+// --- ORB & AMBIENT FEEDBACK ---
+
+function updateOrbState(state) {
+    const $orb = $("#lovense-orb");
+    if (!$orb.length) return;
+    $orb.removeClass("lovense-orb-disconnected lovense-orb-connected lovense-orb-active");
+    $orb.addClass(`lovense-orb-${state}`);
+}
+
+function flashOrb() {
+    const $orb = $("#lovense-orb");
+    if (!$orb.length) return;
+    $orb.removeClass("lovense-orb-flash");
+    $orb[0].offsetHeight;
+    $orb.addClass("lovense-orb-flash");
+    $orb.one("animationend", () => $orb.removeClass("lovense-orb-flash"));
+}
+
+function setAmbientGlow(active) {
+    $("#lovense-ambient").toggleClass("lovense-ambient-active", active);
 }
 
 // --- LOVENSE API FUNCTIONS ---
@@ -311,6 +336,15 @@ async function sendCommand(action) {
     updateStatusDot("sending");
     updateActivityFeed(action === "Stop" ? "Stop" : action);
     triggerCommandPulse();
+    flashOrb();
+
+    // Orb + ambient glow state
+    if (action === "Stop") {
+        setAmbientGlow(false);
+    } else {
+        updateOrbState("active");
+        setAmbientGlow(true);
+    }
 
     try {
         const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
@@ -324,7 +358,7 @@ async function sendCommand(action) {
         console.error("[Lovense] Command Failed:", e);
     }
 
-    // Revert status dot after brief pulse
+    // Revert status dot after brief pulse (also reverts orb via updateStatusDot)
     setTimeout(() => updateStatusDot(lastStatusState), 1000);
 }
 
@@ -347,6 +381,9 @@ async function sendPreset(name) {
     updateStatusDot("sending");
     updateActivityFeed(`Preset: ${name}`);
     triggerCommandPulse();
+    flashOrb();
+    updateOrbState("active");
+    setAmbientGlow(true);
 
     try {
         const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
@@ -652,24 +689,16 @@ async function loadSettings() {
             renderToyStatus(status);
         });
 
-        // Mini-bar controls
-        $("#lovense-mini-expand").on("click", togglePanel);
-        $("#lovense-mini-vibrate").on("click", function () { sendCommand("Vibrate:10"); });
-        $("#lovense-mini-stop").on("click", function () { sendCommand("Stop"); });
-        $("#lovense-mini-enable").prop("checked", settings.isEnabled);
-        $("#lovense-mini-enable").parent().on("click", function () {
-            const $cb = $("#lovense-mini-enable");
-            const newVal = !$cb.prop("checked");
-            $cb.prop("checked", newVal);
-            settings.isEnabled = newVal;
-            $("#lovense-enable").prop("checked", newVal);
-            saveSettings();
-        });
+        // Floating orb — click to toggle panel
+        $("#lovense-orb").on("click", togglePanel);
 
-        // Sync main enable toggle to mini-bar
-        $("#lovense-enable").on("change", function () {
-            $("#lovense-mini-enable").prop("checked", settings.isEnabled);
-        });
+        // Initial orb dock side
+        if (settings.dockSide === "left") {
+            $("#lovense-orb").addClass("lovense-orb-dock-left");
+        }
+
+        // Initial orb state
+        updateOrbState("disconnected");
 
         console.log("[Lovense] UI Loaded Successfully.");
 

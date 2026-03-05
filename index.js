@@ -15,6 +15,7 @@ const ACTION_MAX = {
 const defaultSettings = {
     isEnabled: true,
     uid: "",
+    dockSide: "right",
     actions: {
         Vibrate:   { keywords: "shiver,shake,throb,tingle,buzz,hum,tremble,quiver,shudder", baseIntensity: 10 },
         Rotate:    { keywords: "twist,swirl,spin,grind,circle,gyrate,coil", baseIntensity: 10 },
@@ -34,6 +35,7 @@ const defaultSettings = {
 
 // Populated by initSettings() once SillyTavern is ready.
 let settings = {};
+let panelOpen = false;
 
 function initSettings() {
     const context = SillyTavern.getContext();
@@ -75,8 +77,67 @@ function initSettings() {
         settings.modifierScale = { ...defaultSettings.modifierScale };
     }
 
+    // Ensure dock side exists (v2.x -> v3.0 migration)
+    if (!settings.dockSide) {
+        settings.dockSide = "right";
+    }
+
     extensionSettings[extensionName] = settings;
     context.saveSettingsDebounced();
+}
+
+// --- PANEL CONTROLS ---
+
+function togglePanel() {
+    const $panel = $("#lovense-panel");
+    if (panelOpen) {
+        dismissPanel();
+    } else {
+        $panel.css("display", "flex");
+        // Force reflow before removing hidden class for animation
+        $panel[0].offsetHeight;
+        $panel.removeClass("lovense-hidden");
+        $("#lovense-wand-btn").addClass("lovense-wand-active");
+        panelOpen = true;
+    }
+}
+
+function dismissPanel() {
+    const $panel = $("#lovense-panel");
+    $panel.addClass("lovense-hidden");
+    $("#lovense-wand-btn").removeClass("lovense-wand-active");
+    panelOpen = false;
+
+    // Hide display after transition completes
+    setTimeout(() => {
+        if (!panelOpen) {
+            $panel.css("display", "none");
+        }
+    }, 300);
+}
+
+function setDockSide(side) {
+    const $panel = $("#lovense-panel");
+    const wasOpen = panelOpen;
+
+    // Temporarily disable transitions to avoid cross-screen slide
+    if (wasOpen) {
+        $panel.css("transition", "none");
+        $panel.addClass("lovense-hidden");
+    }
+
+    $panel.removeClass("lovense-dock-left lovense-dock-right");
+    $panel.addClass(`lovense-dock-${side}`);
+
+    settings.dockSide = side;
+    saveSettings();
+
+    if (wasOpen) {
+        // Force reflow, then re-enable transitions and show
+        $panel[0].offsetHeight;
+        $panel.css("transition", "");
+        $panel.removeClass("lovense-hidden");
+    }
 }
 
 // --- LOVENSE API FUNCTIONS ---
@@ -89,7 +150,7 @@ async function getQrCode() {
 
     // Generate new session ID
     settings.uid = "st_client_" + Math.random().toString(36).substr(2, 9);
-    saveSettings(); 
+    saveSettings();
     console.log("[Lovense] Generated new UID:", settings.uid);
 
     const url = "https://api.lovense.com/api/lan/getQrCode";
@@ -110,7 +171,7 @@ async function getQrCode() {
             body: JSON.stringify(payload)
         });
         const data = await response.json();
-        
+
         console.log("[Lovense Debug] API Response:", data);
 
         if (data.result === true) {
@@ -346,8 +407,50 @@ async function loadSettings() {
     console.log("[Lovense] Loading UI from:", `${extensionFolderPath}/settings.html`);
 
     try {
-        const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
-        $("#extensions_settings").append(settingsHtml);
+        const panelHtml = await $.get(`${extensionFolderPath}/settings.html`);
+
+        // Inject floating panel into document body
+        $(document.body).append(panelHtml);
+
+        // Apply saved dock side and start hidden
+        const $panel = $("#lovense-panel");
+        $panel.removeClass("lovense-dock-left lovense-dock-right");
+        $panel.addClass(`lovense-dock-${settings.dockSide}`);
+        $panel.addClass("lovense-hidden");
+        $panel.css("display", "none");
+
+        // Inject wand menu button
+        const $wandBtn = $(`
+            <div id="lovense-wand-btn" class="list-group-item flex-container flexGap5">
+                <div class="fa-solid fa-satellite-dish extensionsMenuExtensionButton"></div>
+                <span>Lovense Cloud</span>
+            </div>
+        `);
+        $("#extensionsMenu").append($wandBtn);
+        $wandBtn.on("click", togglePanel);
+
+        // Panel controls
+        $("#lovense-panel-close").on("click", dismissPanel);
+        $("#lovense-dock-toggle").on("click", () => {
+            const newSide = settings.dockSide === "right" ? "left" : "right";
+            setDockSide(newSide);
+        });
+
+        // Click outside to dismiss
+        $(document).on("click", (e) => {
+            if (!panelOpen) return;
+            const $target = $(e.target);
+            if ($target.closest("#lovense-panel").length > 0) return;
+            if ($target.closest("#lovense-wand-btn").length > 0) return;
+            dismissPanel();
+        });
+
+        // Escape key to dismiss
+        $(document).on("keydown", (e) => {
+            if (e.key === "Escape" && panelOpen) {
+                dismissPanel();
+            }
+        });
 
         // Populate enable checkbox
         $("#lovense-enable").prop("checked", settings.isEnabled);

@@ -1,222 +1,223 @@
-<div class="lovense-cloud-settings">
-    <div class="inline-drawer">
-        <div class="inline-drawer-toggle inline-drawer-header">
-            <b>Lovense Cloud</b>
-            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+<div id="lovense-panel" class="lovense-panel lovense-dock-right lovense-hidden" style="display: none;">
+
+    <div class="lovense-panel-header">
+        <div class="lovense-panel-title">
+            <i class="fa-solid fa-satellite-dish"></i>
+            <span>Lovense Cloud</span>
         </div>
-        <div class="inline-drawer-content" style="display:none;">
-            
-            <label class="checkbox_label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
-                <input type="checkbox" id="lovense-enable" class="checkbox">
-                <span style="font-weight: bold;">Enable Functionality</span>
-            </label>
-
-            <hr style="margin: 10px 0; opacity: 0.2;">
-
-            <div style="margin-bottom: 16px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-link"></i> Connection
-                </h4>
-                
-                <div id="lovense-qr-container" style="text-align: center; margin: 10px 0; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.15); border-radius: 6px; padding: 10px;">
-                    <span style="opacity: 0.5; font-style: italic; font-size: 0.9em;">QR Code will appear here</span>
-                </div>
-
-                <button id="lovense-get-qr" class="menu_button" style="width: 100%;">
-                    <i class="fa-solid fa-qrcode"></i> Generate QR Code
-                </button>
+        <div class="lovense-panel-controls">
+            <div id="lovense-dock-toggle" class="lovense-panel-btn" title="Switch dock side">
+                <i class="fa-solid fa-arrow-right-arrow-left"></i>
             </div>
-
-            <hr style="margin: 10px 0; opacity: 0.2;">
-
-            <div style="margin-bottom: 16px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-circle-info"></i> Toy Status
-                </h4>
-                <div id="lovense-toy-status" style="background: rgba(0,0,0,0.15); border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; min-height: 30px;">
-                    <span style="opacity:0.5; font-style:italic; font-size:0.85em;">Scan QR to connect a toy.</span>
-                </div>
-                <button id="lovense-refresh-status" class="menu_button" style="width: 100%; font-size: 0.85em;">
-                    <i class="fa-solid fa-arrows-rotate"></i> Refresh Status
-                </button>
+            <div id="lovense-panel-close" class="lovense-panel-btn" title="Close panel">
+                <i class="fa-solid fa-xmark"></i>
             </div>
-
-            <hr style="margin: 10px 0; opacity: 0.2;">
-
-            <div style="margin-bottom: 16px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-gamepad"></i> Manual Test
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
-                    <button id="lovense-low" class="menu_button">Low</button>
-                    <button id="lovense-med" class="menu_button">Med</button>
-                    <button id="lovense-high" class="menu_button">High</button>
-                    <button id="lovense-stop" class="menu_button" style="background-color: rgba(200, 50, 50, 0.3);">Stop</button>
-                </div>
-                <h4 style="margin: 10px 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Presets
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
-                    <button id="lovense-pulse" class="menu_button">Pulse</button>
-                    <button id="lovense-wave" class="menu_button">Wave</button>
-                    <button id="lovense-fireworks" class="menu_button">Fire</button>
-                    <button id="lovense-earthquake" class="menu_button">Quake</button>
-                </div>
-            </div>
-
-            <hr style="margin: 10px 0; opacity: 0.2;">
-
-            <div style="margin-bottom: 16px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 0.8em; text-transform: uppercase; opacity: 0.5; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-bolt"></i> Keyword Triggers
-                </h4>
-                <div style="font-size: 0.75em; opacity: 0.5; margin-bottom: 8px;">
-                    When the AI's response contains these keywords, the matching action fires automatically. Multiple actions can stack.
-                </div>
-
-                <div class="lovense-action-group" data-action="Vibrate">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Vibrate</span><span class="lovense-action-preview" id="lovense-preview-Vibrate"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Vibrate" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Vibrate" min="1" max="20" value="10" style="flex:1;">
-                            <span id="lovense-intensity-val-Vibrate" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Rotate">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Rotate</span><span class="lovense-action-preview" id="lovense-preview-Rotate"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Rotate" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Rotate" min="1" max="20" value="10" style="flex:1;">
-                            <span id="lovense-intensity-val-Rotate" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Pump">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Pump</span><span class="lovense-action-preview" id="lovense-preview-Pump"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Pump" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Pump" min="1" max="3" value="2" style="flex:1;">
-                            <span id="lovense-intensity-val-Pump" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">2</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Thrusting">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Thrusting</span><span class="lovense-action-preview" id="lovense-preview-Thrusting"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Thrusting" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Thrusting" min="1" max="20" value="10" style="flex:1;">
-                            <span id="lovense-intensity-val-Thrusting" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Fingering">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Fingering</span><span class="lovense-action-preview" id="lovense-preview-Fingering"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Fingering" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Fingering" min="1" max="20" value="10" style="flex:1;">
-                            <span id="lovense-intensity-val-Fingering" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Suction">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Suction</span><span class="lovense-action-preview" id="lovense-preview-Suction"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Suction" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Suction" min="1" max="20" value="10" style="flex:1;">
-                            <span id="lovense-intensity-val-Suction" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Oscillate">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Oscillate</span><span class="lovense-action-preview" id="lovense-preview-Oscillate"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Oscillate" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Oscillate" min="1" max="20" value="10" style="flex:1;">
-                            <span id="lovense-intensity-val-Oscillate" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" data-action="Depth">
-                    <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Depth</span><span class="lovense-action-preview" id="lovense-preview-Depth"></span></div>
-                    <div class="lovense-action-body" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
-                        <textarea id="lovense-keywords-Depth" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
-                            <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
-                            <input type="range" id="lovense-intensity-Depth" min="1" max="3" value="2" style="flex:1;">
-                            <span id="lovense-intensity-val-Depth" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">2</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lovense-action-group" style="margin-top: 8px;">
-                    <div class="lovense-action-header" data-section="modifiers"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Intensity Modifiers</span></div>
-                    <div class="lovense-action-body" data-section="modifiers" style="display:none;">
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Low-intensity words (comma separated)</label>
-                        <textarea id="lovense-mod-low" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px; margin-bottom:10px;">
-                            <label style="font-size:0.8em; opacity:0.8;">Multiplier:</label>
-                            <input type="number" id="lovense-mod-low-scale" min="0.1" max="1.0" step="0.1" value="0.5" style="width:55px; font-size:0.85em;" class="text_pole">
-                            <span style="font-size:0.75em; opacity:0.6;">x base</span>
-                        </div>
-                        <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">High-intensity words (comma separated)</label>
-                        <textarea id="lovense-mod-high" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                            <label style="font-size:0.8em; opacity:0.8;">Multiplier:</label>
-                            <input type="number" id="lovense-mod-high-scale" min="1.0" max="3.0" step="0.1" value="1.5" style="width:55px; font-size:0.85em;" class="text_pole">
-                            <span style="font-size:0.75em; opacity:0.6;">x base</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <hr style="margin: 10px 0; opacity: 0.2;">
-
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <a href="https://www.lovense.com/r/uo3mr6" target="_blank" class="menu_button lovense-link-btn">
-                    <i class="fa-solid fa-tag"></i> Lovense Discount
-                </a>
-                <a href="https://discord.gg/therealhype" target="_blank" class="menu_button lovense-link-btn">
-                    <i class="fa-brands fa-discord"></i> Hype Discord
-                </a>
-                <a href="https://ko-fi.com/hype" target="_blank" class="menu_button lovense-link-btn">
-                    <i class="fa-solid fa-heart"></i> Support Hyperion
-                </a>
-            </div>
-
-            <div style="text-align: center; margin-top: 12px; font-size: 0.7em; opacity: 0.4;">
-                Lovense Cloud v2.0.0 by Hyperion
-            </div>
-
         </div>
+    </div>
+
+    <div class="lovense-panel-body">
+
+        <label class="lovense-toggle-row">
+            <input type="checkbox" id="lovense-enable" class="checkbox">
+            <span>Enable Automation</span>
+        </label>
+
+        <!-- Connection -->
+        <div class="lovense-section">
+            <div class="lovense-section-label">
+                <i class="fa-solid fa-link"></i> Connection
+            </div>
+            <div id="lovense-qr-container" class="lovense-qr-area">
+                <span class="lovense-placeholder">QR Code will appear here</span>
+            </div>
+            <button id="lovense-get-qr" class="menu_button">
+                <i class="fa-solid fa-qrcode"></i> Generate QR Code
+            </button>
+        </div>
+
+        <!-- Toy Status -->
+        <div class="lovense-section">
+            <div class="lovense-section-label">
+                <i class="fa-solid fa-circle-info"></i> Toy Status
+            </div>
+            <div id="lovense-toy-status" class="lovense-status-area">
+                <span class="lovense-placeholder">Scan QR to connect a toy.</span>
+            </div>
+            <button id="lovense-refresh-status" class="menu_button" style="font-size: 0.85em;">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh Status
+            </button>
+        </div>
+
+        <!-- Manual Test -->
+        <div class="lovense-section">
+            <div class="lovense-section-label">
+                <i class="fa-solid fa-gamepad"></i> Manual Test
+            </div>
+            <div class="lovense-btn-grid">
+                <button id="lovense-low" class="menu_button">Low</button>
+                <button id="lovense-med" class="menu_button">Med</button>
+                <button id="lovense-high" class="menu_button">High</button>
+                <button id="lovense-stop" class="menu_button lovense-stop-btn">Stop</button>
+            </div>
+            <div class="lovense-section-label lovense-sublabel">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Presets
+            </div>
+            <div class="lovense-btn-grid">
+                <button id="lovense-pulse" class="menu_button">Pulse</button>
+                <button id="lovense-wave" class="menu_button">Wave</button>
+                <button id="lovense-fireworks" class="menu_button">Fire</button>
+                <button id="lovense-earthquake" class="menu_button">Quake</button>
+            </div>
+        </div>
+
+        <!-- Keyword Triggers -->
+        <div class="lovense-section">
+            <div class="lovense-section-label">
+                <i class="fa-solid fa-bolt"></i> Keyword Triggers
+            </div>
+            <div class="lovense-section-hint">
+                Keywords in AI responses trigger matching actions. Multiple actions can stack.
+            </div>
+
+            <div class="lovense-action-group" data-action="Vibrate">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Vibrate</span><span class="lovense-action-preview" id="lovense-preview-Vibrate"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Vibrate" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Vibrate" min="1" max="20" value="10" style="flex:1;">
+                        <span id="lovense-intensity-val-Vibrate" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Rotate">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Rotate</span><span class="lovense-action-preview" id="lovense-preview-Rotate"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Rotate" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Rotate" min="1" max="20" value="10" style="flex:1;">
+                        <span id="lovense-intensity-val-Rotate" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Pump">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Pump</span><span class="lovense-action-preview" id="lovense-preview-Pump"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Pump" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Pump" min="1" max="3" value="2" style="flex:1;">
+                        <span id="lovense-intensity-val-Pump" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">2</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Thrusting">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Thrusting</span><span class="lovense-action-preview" id="lovense-preview-Thrusting"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Thrusting" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Thrusting" min="1" max="20" value="10" style="flex:1;">
+                        <span id="lovense-intensity-val-Thrusting" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Fingering">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Fingering</span><span class="lovense-action-preview" id="lovense-preview-Fingering"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Fingering" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Fingering" min="1" max="20" value="10" style="flex:1;">
+                        <span id="lovense-intensity-val-Fingering" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Suction">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Suction</span><span class="lovense-action-preview" id="lovense-preview-Suction"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Suction" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Suction" min="1" max="20" value="10" style="flex:1;">
+                        <span id="lovense-intensity-val-Suction" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Oscillate">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Oscillate</span><span class="lovense-action-preview" id="lovense-preview-Oscillate"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Oscillate" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Oscillate" min="1" max="20" value="10" style="flex:1;">
+                        <span id="lovense-intensity-val-Oscillate" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Depth">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Depth</span><span class="lovense-action-preview" id="lovense-preview-Depth"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Depth" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Depth" min="1" max="3" value="2" style="flex:1;">
+                        <span id="lovense-intensity-val-Depth" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">2</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" style="margin-top: 8px;">
+                <div class="lovense-action-header" data-section="modifiers"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Intensity Modifiers</span></div>
+                <div class="lovense-action-body" data-section="modifiers" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Low-intensity words (comma separated)</label>
+                    <textarea id="lovense-mod-low" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:4px; margin-bottom:10px;">
+                        <label style="font-size:0.8em; opacity:0.8;">Multiplier:</label>
+                        <input type="number" id="lovense-mod-low-scale" min="0.1" max="1.0" step="0.1" value="0.5" style="width:55px; font-size:0.85em;" class="text_pole">
+                        <span style="font-size:0.75em; opacity:0.6;">x base</span>
+                    </div>
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">High-intensity words (comma separated)</label>
+                    <textarea id="lovense-mod-high" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                        <label style="font-size:0.8em; opacity:0.8;">Multiplier:</label>
+                        <input type="number" id="lovense-mod-high-scale" min="1.0" max="3.0" step="0.1" value="1.5" style="width:55px; font-size:0.85em;" class="text_pole">
+                        <span style="font-size:0.75em; opacity:0.6;">x base</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Links -->
+        <div class="lovense-section lovense-links">
+            <a href="https://www.lovense.com/r/uo3mr6" target="_blank" class="menu_button lovense-link-btn">
+                <i class="fa-solid fa-tag"></i> Lovense Discount
+            </a>
+            <a href="https://discord.gg/therealhype" target="_blank" class="menu_button lovense-link-btn">
+                <i class="fa-brands fa-discord"></i> Hype Discord
+            </a>
+            <a href="https://ko-fi.com/hype" target="_blank" class="menu_button lovense-link-btn">
+                <i class="fa-solid fa-heart"></i> Support Hyperion
+            </a>
+        </div>
+
+        <div class="lovense-version">Lovense Cloud v3.0.0 by Hyperion</div>
+
     </div>
 </div>

@@ -882,6 +882,14 @@ body > .lovense-chatbar-btn {
         max-width: 100vw;
         border-radius: 0 !important;
         border: none !important;
+        z-index: 10001; /* Above all ST UI on mobile */
+    }
+
+    /* Slide up from bottom on mobile instead of left/right */
+    .lovense-panel.lovense-hidden {
+        transform: translateY(100%) !important;
+        opacity: 0;
+        pointer-events: none;
     }
 
     .lovense-orb {

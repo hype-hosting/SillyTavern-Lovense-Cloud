@@ -58,6 +58,7 @@ let lastStatusState = "disconnected"; // Track connection state for status dot r
 let toyRunning = false; // True while a command/pattern/preset is active (not Stop)
 let connectedToyCapabilities = null; // null = unknown, Set of action names when toys connected
 let lovenseSocket = null; // Socket.IO connection to Lovense for instant pairing
+let lastKnownToyData = null; // Last device info received from socket events
 
 function initSettings() {
     const context = SillyTavern.getContext();
@@ -513,6 +514,18 @@ function renderToyStatus(data) {
 
     console.log("[Lovense] renderToyStatus raw:", JSON.stringify(data));
     if (!data || (data.code != 200 && data.result !== true) || !data.data || !data.data.toys) {
+        // Cloud HTTP API doesn't return toy data — fall back to last socket info
+        if (lastKnownToyData && !data) {
+            // Re-invoke with cached socket data
+            handleSocketDeviceInfo(lastKnownToyData);
+            return;
+        }
+        // HTTP API returned 200 but no toys — app is online but no toy details available
+        if (data && (data.code == 200 || data.result === true) && (!data.data || !data.data.toys)) {
+            container.html('<span class="lovense-placeholder">App connected — waiting for toy data via socket...</span>');
+            updateStatusDot("connected");
+            return;
+        }
         container.html('<span class="lovense-placeholder">No toys detected. Scan QR and connect first.</span>');
         connectedToyCapabilities = null;
         updateActionGroupVisibility();
@@ -605,53 +618,106 @@ function loadSocketIO() {
             return;
         }
         const script = document.createElement("script");
-        script.src = "https://cdn.socket.io/2.5.0/socket.io.min.js";
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js";
         script.onload = () => resolve(io);
         script.onerror = () => reject(new Error("Failed to load Socket.IO"));
         document.head.appendChild(script);
     });
 }
 
+async function initSocketApi() {
+    const response = await fetch("https://api.lovense-api.com/api/basicApi/getSocketUrl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: "SillyTavern", authToken: DEV_TOKEN }),
+    });
+    const data = await response.json();
+    console.log("[Lovense] Socket init response:", data);
+    if (data.message === "Success" && data.data) {
+        return { socketIoUrl: data.data.socketIoUrl, socketIoPath: data.data.socketIoPath };
+    }
+    throw new Error("Socket init failed: " + (data.message || "Unknown error"));
+}
+
+function handleSocketDeviceInfo(res) {
+    try {
+        const resData = typeof res === "string" ? JSON.parse(res) : (res || {});
+        console.log("[Lovense] Parsed device info:", resData);
+
+        // Store raw data for fallback
+        lastKnownToyData = resData;
+
+        // Normalize to the format renderToyStatus() expects
+        // Socket event data may contain toys directly or nested under various keys
+        let toys = null;
+        if (resData.toys) {
+            toys = typeof resData.toys === "string" ? JSON.parse(resData.toys) : resData.toys;
+        } else if (resData.data && resData.data.toys) {
+            toys = typeof resData.data.toys === "string" ? JSON.parse(resData.data.toys) : resData.data.toys;
+        }
+
+        if (toys) {
+            renderToyStatus({ result: true, code: 200, data: { toys: toys } });
+        } else {
+            // Event arrived but no toy details — may just be an app status update
+            console.log("[Lovense] Device info event had no toy details, raw:", resData);
+            // Still mark as connected if we got any event
+            updateStatusDot("connected");
+        }
+    } catch (e) {
+        console.error("[Lovense] Failed to parse device info:", e);
+    }
+}
+
 async function connectLovenseSocket() {
     try {
         const socketIO = await loadSocketIO();
+        const { socketIoUrl, socketIoPath } = await initSocketApi();
+
+        console.log("[Lovense] Connecting socket to:", socketIoUrl, "path:", socketIoPath);
 
         if (lovenseSocket) {
             lovenseSocket.disconnect();
         }
 
-        lovenseSocket = socketIO("wss://api.lovense.com", {
+        lovenseSocket = socketIO(socketIoUrl, {
+            path: socketIoPath,
             transports: ["websocket"],
-            path: "/socket.io",
-            query: {
-                token: DEV_TOKEN,
-                uid: settings.uid,
-                platform: "js",
-            },
+            forceNew: true,
+            reconnection: true,
+            timeout: 5000,
+            upgrade: false,
+            rememberUpgrade: false,
         });
 
         lovenseSocket.on("connect", () => {
             console.log("[Lovense] Socket connected");
         });
 
-        lovenseSocket.on("basicapi_update_app_status_tc", (data) => {
-            console.log("[Lovense] QR scanned event:", data);
+        lovenseSocket.on("basicapi_update_app_status_tc", (res) => {
+            console.log("[Lovense] QR scanned event:", res);
             toastr.success("Toy app connected!");
-            getToyStatus().then(renderToyStatus);
+            handleSocketDeviceInfo(res);
         });
 
-        lovenseSocket.on("basicapi_update_device_info_tc", (data) => {
-            console.log("[Lovense] Device info update:", data);
-            getToyStatus().then(renderToyStatus);
+        lovenseSocket.on("basicapi_update_device_info_tc", (res) => {
+            console.log("[Lovense] Device info update:", res);
+            handleSocketDeviceInfo(res);
         });
 
-        lovenseSocket.on("basicapi_update_app_online_tc", (data) => {
-            console.log("[Lovense] App online status:", data);
-            if (data && data.status === 0) {
+        lovenseSocket.on("basicapi_update_app_online_tc", (res) => {
+            console.log("[Lovense] App online status:", res);
+            const data = typeof res === "string" ? JSON.parse(res) : (res || {});
+            if (data.status === 0) {
                 updateStatusDot("disconnected");
                 connectedToyCapabilities = null;
+                lastKnownToyData = null;
                 updateActionGroupVisibility();
             }
+        });
+
+        lovenseSocket.on("connect_error", (err) => {
+            console.error("[Lovense] Socket connection error:", err);
         });
 
         lovenseSocket.on("disconnect", () => {
@@ -1076,7 +1142,12 @@ async function loadSettings() {
             flashButton($(this));
             $("#lovense-toy-status").html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
             const status = await getToyStatus();
-            renderToyStatus(status);
+            // Cloud API GetToys doesn't return toy data — use lastKnownToyData if available
+            if (status && (status.code == 200 || status.result === true) && (!status.data || !status.data.toys) && lastKnownToyData) {
+                handleSocketDeviceInfo(lastKnownToyData);
+            } else {
+                renderToyStatus(status);
+            }
         });
 
         // Floating orb — click to toggle panel

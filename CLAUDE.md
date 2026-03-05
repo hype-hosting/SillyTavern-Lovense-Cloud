@@ -7,7 +7,7 @@ A SillyTavern third-party extension that controls Lovense toys via the Lovense C
 ## File Structure
 
 ```
-lovense-cloud/
+SillyTavern-Lovense-Cloud/
 ├── manifest.json      # ST extension manifest (name, version, entry points)
 ├── index.js           # All logic: API calls, automation, panel controls, settings, init
 ├── settings.html      # Floating glassmorphism panel HTML (appended to document.body)
@@ -152,7 +152,7 @@ Key behaviors:
 
 ## Development Notes
 
-- The extension folder must be at `scripts/extensions/third-party/lovense-cloud/` relative to ST's public directory.
+- The extension folder must be at `scripts/extensions/third-party/SillyTavern-Lovense-Cloud/` relative to ST's public directory.
 - `extensionFolderPath` is used to load `settings.html` via `$.get()`.
 - Panel HTML is appended to `document.body`, **not** `#extensions_settings`.
 - Wand menu button is appended to `#extensionsMenu` following ST's standard pattern.

@@ -3,7 +3,7 @@
 // --- SERVER ADMIN: Paste your Lovense Developer Token below ---
 const DEV_TOKEN = "PASTE_YOUR_TOKEN_HERE";
 
-const extensionName = "lovense-cloud";
+const extensionName = "SillyTavern-Lovense-Cloud";
 const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 
 // Maximum intensity per action type (API constraint, not user-configurable).

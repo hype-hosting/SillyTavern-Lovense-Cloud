@@ -833,6 +833,45 @@
 }
 
 /* ── Responsive ────────────────────────────────────────── */
+/* ── Mobile Chatbar Button ────────────────────────────── */
+.lovense-chatbar-btn {
+    display: none; /* Hidden on desktop — floating orb is visible */
+}
+
+.lovense-chatbar-btn-dot {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    z-index: 1;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.lovense-dot-disconnected {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.lovense-dot-connected {
+    background: #a855f7;
+    box-shadow: 0 0 4px rgba(168, 85, 247, 0.5);
+}
+
+.lovense-dot-active {
+    background: #22c55e;
+    box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+/* Fallback: if chatbar button stays on document.body (no #leftSendForm found) */
+body > .lovense-chatbar-btn {
+    position: fixed;
+    bottom: 12px;
+    left: 50px;
+    z-index: 1001;
+}
+
 @media screen and (max-width: 768px) {
     .lovense-panel {
         top: 0;
@@ -846,13 +885,32 @@
     }
 
     .lovense-orb {
-        bottom: 70px;
-        right: 12px;
+        display: none !important; /* Hide floating orb on mobile — chatbar button replaces it */
     }
 
-    .lovense-orb.lovense-orb-dock-left {
-        left: 12px;
-        right: auto;
+    .lovense-chatbar-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(19, 17, 28, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+        position: relative;
+        font-size: 0.75em;
+        color: rgba(255, 255, 255, 0.5);
+        margin: 0 2px;
+        transition: color 0.2s, border-color 0.2s;
+    }
+
+    .lovense-chatbar-btn:hover,
+    .lovense-chatbar-btn:active {
+        color: rgba(255, 255, 255, 0.8);
+        border-color: rgba(168, 85, 247, 0.4);
     }
 }
 

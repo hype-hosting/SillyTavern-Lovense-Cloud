@@ -255,6 +255,13 @@ function updateOrbState(state) {
     if (!$orb.length) return;
     $orb.removeClass("lovense-orb-disconnected lovense-orb-connected lovense-orb-active");
     $orb.addClass(`lovense-orb-${state}`);
+
+    // Sync mobile chatbar button dot
+    const $dot = $(".lovense-chatbar-btn-dot");
+    if ($dot.length) {
+        $dot.removeClass("lovense-dot-disconnected lovense-dot-connected lovense-dot-active");
+        $dot.addClass(`lovense-dot-${state}`);
+    }
 }
 
 function flashOrb() {
@@ -1028,6 +1035,14 @@ async function loadSettings() {
         `);
         $("#extensionsMenu").append($wandBtn);
         $wandBtn.on("click", togglePanel);
+
+        // Mobile chatbar button — inject near ST's chatbar buttons
+        const $chatbarBtn = $("#lovense-chatbar-btn");
+        const $leftSendForm = $("#leftSendForm");
+        if ($leftSendForm.length) {
+            $chatbarBtn.detach().appendTo($leftSendForm);
+        }
+        $chatbarBtn.on("click", togglePanel);
 
         // Panel controls
         $("#lovense-panel-close").on("click", dismissPanel);

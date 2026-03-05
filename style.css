@@ -703,40 +703,26 @@
 /* ── Collapsed Mini-Bar ─────────────────────────────────── */
 .lovense-mini-bar {
     position: fixed;
-    bottom: 45px;
-    left: 0;
-    right: 0;
-    height: 36px;
+    bottom: 2px;
+    right: 10px;
+    height: auto;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 12px;
+    gap: 4px;
+    padding: 4px;
     z-index: 999;
     background: var(--lovense-glass-bg);
-    border-top: 1px solid var(--lovense-glass-border);
+    border: 1px solid var(--lovense-glass-border);
+    border-radius: 8px;
     backdrop-filter: blur(var(--lovense-glass-blur)) saturate(1.2);
     -webkit-backdrop-filter: blur(var(--lovense-glass-blur)) saturate(1.2);
     transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
 .lovense-mini-bar.lovense-mini-hidden {
-    transform: translateY(100%);
+    transform: scale(0.9) translateY(10px);
     opacity: 0;
     pointer-events: none;
-}
-
-.lovense-mini-bar-label {
-    font-size: 0.75em;
-    opacity: 0.6;
-    margin-right: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.lovense-mini-bar-actions {
-    display: flex;
-    gap: 4px;
 }
 
 .lovense-mini-btn {

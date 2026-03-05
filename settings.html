@@ -4,11 +4,12 @@
         <div class="lovense-panel-title">
             <i class="fa-solid fa-satellite-dish"></i>
             <span>Lovense Cloud</span>
+            <span class="lovense-version" title="by Hyperion">v3.2.0</span>
             <span id="lovense-status-dot" class="lovense-status-dot lovense-status-disconnected" title="Disconnected"></span>
         </div>
         <div class="lovense-panel-controls">
             <div id="lovense-dock-toggle" class="lovense-panel-btn" title="Switch dock side">
-                <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                <i class="fa-solid fa-chevron-left"></i>
             </div>
             <div id="lovense-panel-close" class="lovense-panel-btn" title="Close panel">
                 <i class="fa-solid fa-xmark"></i>
@@ -35,8 +36,14 @@
             <div class="lovense-section-label">
                 <i class="fa-solid fa-link"></i> Connection
             </div>
-            <div id="lovense-qr-container" class="lovense-qr-area">
-                <span class="lovense-placeholder">QR Code will appear here</span>
+            <div id="lovense-qr-drawer" class="lovense-qr-drawer lovense-qr-collapsed">
+                <div id="lovense-qr-container" class="lovense-qr-area">
+                    <span class="lovense-placeholder">QR Code will appear here</span>
+                </div>
+            </div>
+            <div id="lovense-qr-toggle" class="lovense-qr-toggle" style="display: none;">
+                <i class="fa-solid fa-chevron-down"></i>
+                <span>Show QR Code</span>
             </div>
             <button id="lovense-get-qr" class="menu_button">
                 <i class="fa-solid fa-qrcode"></i> Generate QR Code
@@ -62,19 +69,19 @@
                 <i class="fa-solid fa-gamepad"></i> Manual Test
             </div>
             <div class="lovense-btn-grid">
-                <button id="lovense-low" class="menu_button">Low</button>
-                <button id="lovense-med" class="menu_button">Med</button>
-                <button id="lovense-high" class="menu_button">High</button>
-                <button id="lovense-stop" class="menu_button lovense-stop-btn">Stop</button>
+                <button id="lovense-low" class="menu_button" title="Low"><i class="fa-solid fa-volume-low"></i></button>
+                <button id="lovense-med" class="menu_button" title="Medium"><i class="fa-solid fa-volume"></i></button>
+                <button id="lovense-high" class="menu_button" title="High"><i class="fa-solid fa-volume-high"></i></button>
+                <button id="lovense-stop" class="menu_button lovense-stop-btn" title="Stop"><i class="fa-solid fa-stop"></i></button>
             </div>
             <div class="lovense-section-label lovense-sublabel">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Presets
             </div>
             <div class="lovense-btn-grid">
-                <button id="lovense-pulse" class="menu_button">Pulse</button>
-                <button id="lovense-wave" class="menu_button">Wave</button>
-                <button id="lovense-fireworks" class="menu_button">Fire</button>
-                <button id="lovense-earthquake" class="menu_button">Quake</button>
+                <button id="lovense-pulse" class="menu_button" title="Pulse"><i class="fa-solid fa-heart-pulse"></i></button>
+                <button id="lovense-wave" class="menu_button" title="Wave"><i class="fa-solid fa-water"></i></button>
+                <button id="lovense-fireworks" class="menu_button" title="Fireworks"><i class="fa-solid fa-fire"></i></button>
+                <button id="lovense-earthquake" class="menu_button" title="Earthquake"><i class="fa-solid fa-house-crack"></i></button>
             </div>
         </div>
 
@@ -214,18 +221,33 @@
 
         <!-- Links -->
         <div class="lovense-section lovense-links">
-            <a href="https://www.lovense.com/r/uo3mr6" target="_blank" class="menu_button lovense-link-btn">
-                <i class="fa-solid fa-tag"></i> Lovense Discount
+            <a href="https://www.lovense.com/r/uo3mr6" target="_blank" class="menu_button lovense-link-btn" title="Lovense Discount">
+                <i class="fa-solid fa-tag"></i>
             </a>
-            <a href="https://discord.gg/therealhype" target="_blank" class="menu_button lovense-link-btn">
-                <i class="fa-brands fa-discord"></i> Hype Discord
+            <a href="https://discord.gg/therealhype" target="_blank" class="menu_button lovense-link-btn" title="Hype Discord">
+                <i class="fa-brands fa-discord"></i>
             </a>
-            <a href="https://ko-fi.com/hype" target="_blank" class="menu_button lovense-link-btn">
-                <i class="fa-solid fa-heart"></i> Support Hyperion
+            <a href="https://ko-fi.com/hype" target="_blank" class="menu_button lovense-link-btn" title="Support Hyperion">
+                <i class="fa-solid fa-heart"></i>
             </a>
         </div>
 
-        <div class="lovense-version">Lovense Cloud v3.1.0 by Hyperion</div>
+    </div>
+</div>
 
+<!-- Collapsed Mini-Bar (shown when panel is closed) -->
+<div id="lovense-mini-bar" class="lovense-mini-bar lovense-mini-hidden">
+    <div class="lovense-mini-bar-label">
+        <span id="lovense-mini-dot" class="lovense-status-dot lovense-status-disconnected"></span>
+        <span>Lovense</span>
+    </div>
+    <div class="lovense-mini-bar-actions">
+        <label class="lovense-mini-btn" title="Enable/Disable">
+            <input type="checkbox" id="lovense-mini-enable" style="display:none;">
+            <i class="fa-solid fa-power-off"></i>
+        </label>
+        <button id="lovense-mini-vibrate" class="lovense-mini-btn" title="Vibrate"><i class="fa-solid fa-volume-high"></i></button>
+        <button id="lovense-mini-stop" class="lovense-mini-btn lovense-stop-btn" title="Stop"><i class="fa-solid fa-stop"></i></button>
+        <button id="lovense-mini-expand" class="lovense-mini-btn lovense-mini-expand" title="Open Panel"><i class="fa-solid fa-chevron-up"></i></button>
     </div>
 </div>

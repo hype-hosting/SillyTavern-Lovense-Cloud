@@ -30,13 +30,13 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 2.  Open a terminal in `/public/scripts/extensions/third-party/`.
 3.  Clone this repository:
     ```bash
-    git clone https://github.com/hype-hosting/SillyTavern-Lovense-Cloud.git lovense-cloud
+    git clone https://github.com/hype-hosting/SillyTavern-Lovense-Cloud.git
     ```
 4.  Restart SillyTavern.
 
 ### Method 2: Manual Install
 1.  Download the ZIP file of this repo.
-2.  Extract the contents into a new folder named `lovense-cloud` inside `/public/scripts/extensions/third-party/`.
+2.  Extract the contents into a new folder named `SillyTavern-Lovense-Cloud` inside `/public/scripts/extensions/third-party/`.
 3.  Restart SillyTavern.
 
 ---
@@ -53,7 +53,7 @@ The Lovense Developer Token is configured in the extension source code, not in t
     * Copy the **Developer Token**.
 
 2.  **Configure the Token:**
-    * Open `index.js` in the extension folder (`/public/scripts/extensions/third-party/lovense-cloud/index.js`).
+    * Open `index.js` in the extension folder (`/public/scripts/extensions/third-party/SillyTavern-Lovense-Cloud/index.js`).
     * Find line 4 at the top of the file:
       ```js
       const DEV_TOKEN = "PASTE_YOUR_TOKEN_HERE";

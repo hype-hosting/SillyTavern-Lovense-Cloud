@@ -10,15 +10,16 @@ This extension uses the **Lovense Cloud API**. This means it works well for:
 
 ## Features
 
+* **Glassmorphism Floating Panel:** A sleek, translucent control panel accessible from the wand menu in the chat bar. Docks to either side of the window.
 * **Zero Prompt Engineering:** No character card setup or AI prompting needed. The extension reads the AI's natural language and handles everything.
 * **Keyword-Driven Automation:** Customize keyword lists per action type. When the AI writes naturally, matching keywords trigger the right toy action automatically.
 * **Command Stacking:** Multiple actions can fire simultaneously. If the AI mentions both shivering and twisting, vibrate and rotate combine into one command.
 * **Intensity Modifiers:** Words like "gentle" or "harder" in the AI's text automatically adjust intensity up or down from your base setting.
 * **Full Toy Support:** Vibrate, Rotate, Pump, Thrust, Finger, Suction, Oscillate, Depth — supports the entire Lovense lineup.
 * **Preset Patterns:** Built-in dynamic patterns — Pulse, Wave, Fireworks, Earthquake — available via manual buttons.
-* **Toy Status:** See connected toy name, battery level, and connection status in the UI.
+* **Toy Status:** See connected toy name, battery level, and connection status in the panel.
 * **QR Code Pairing:** Connect your toy simply by scanning a QR code with the Lovense Remote app.
-* **Manual Control:** Test vibrations and presets directly from the extension UI.
+* **Manual Control:** Test vibrations and presets directly from the panel.
 
 ---
 
@@ -65,16 +66,20 @@ The Lovense Developer Token is configured in the extension source code, not in t
 
 ### User Setup
 
-3.  **Connect Toy:**
-    * Open SillyTavern and go to **Extensions** (Puzzle Piece icon).
-    * Find **Lovense Cloud** and expand the settings.
-    * Click the **Generate QR Code** button.
+3.  **Open the Panel:**
+    * Click the **wand icon** (✨) in the chat input bar at the bottom of the screen.
+    * Select **Lovense Cloud** from the dropdown menu.
+    * The control panel will slide in from the side of the window.
+    * *Tip: Click the ↔ button in the panel header to switch between left and right docking.*
+
+4.  **Connect Toy:**
+    * Click the **Generate QR Code** button in the panel.
     * Open the **Lovense Remote App** (Pink Icon) on your phone.
     * Tap the `+` or "Scan" button and scan the QR code on your screen.
     * *Note: Ensure your toy is already connected to the app via Bluetooth.*
 
-4.  **Test:**
-    * Click the **Low**, **Med**, or **High** button in the extension. If your toy vibrates, you are ready to go!
+5.  **Test:**
+    * Click the **Low**, **Med**, or **High** button in the panel. If your toy vibrates, you are ready to go!
 
 ---
 
@@ -98,7 +103,7 @@ Each toy action type has its own keyword list and base intensity slider. When th
 | **Oscillate** | sway, rock, undulate, ripple, flutter | 0-20 |
 | **Depth** | hilt, bottom out, fully inside | 0-3 |
 
-You can customize every keyword list and intensity slider in the extension settings.
+You can customize every keyword list and intensity slider in the panel.
 
 ### Command Stacking
 Multiple keywords from different action types can trigger in the same message. The extension combines them into one command. For example, if the AI writes *"she shivers and twists against you"*, and you have "shiver" under Vibrate and "twist" under Rotate, the extension sends both Vibrate and Rotate simultaneously.
@@ -111,7 +116,7 @@ The extension also scans for intensity modifier words that adjust the strength u
 For example, if your Vibrate base intensity is 10 and the AI writes *"she gently shivers"*, the extension sends Vibrate at 5 (10 x 0.5). If it writes *"she shivers intensely"*, it sends Vibrate at 15 (10 x 1.5).
 
 ### Presets
-Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the extension UI. These are built-in Lovense patterns that run continuously until stopped
+Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the panel. These are built-in Lovense patterns that run continuously until stopped.
 
 ---
 
@@ -127,8 +132,10 @@ Pulse, Wave, Fireworks, and Earthquake are available as manual buttons in the ex
     * Ensure the toy icon in the app is green (connected).
 * **Some commands don't seem to work:**
     * Not all Lovense toys support every action. Vibrate works on all toys, but Rotate, Thrust, Finger, Suction, Oscillate, Pump, and Depth require specific toy models. Unsupported actions are silently ignored by the toy.
+* **Can't find the extension:**
+    * Click the **wand icon** (✨) in the chat input bar. Lovense Cloud appears in the dropdown menu, not in the Extensions sidebar.
 * **Toy triggers too often / not enough:**
-    * Customize the keyword lists in the extension settings. Remove words that cause false triggers, or add more specific words for your preferred scenarios. Adjust the base intensity sliders to your preference.
+    * Customize the keyword lists in the panel. Remove words that cause false triggers, or add more specific words for your preferred scenarios. Adjust the base intensity sliders to your preference.
 * **Mixed Content Warnings:**
     * This extension uses the official Cloud API (`https://api.lovense.com`), so it should **not** trigger mixed content warnings (HTTP vs HTTPS), making it safe for hosted instances.
 

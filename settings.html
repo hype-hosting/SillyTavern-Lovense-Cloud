@@ -4,7 +4,7 @@
         <div class="lovense-panel-title">
             <i class="fa-solid fa-satellite-dish"></i>
             <span>Lovense Cloud</span>
-            <span class="lovense-version" title="by Hyperion">v3.2.0</span>
+            <span class="lovense-version" title="by Hyperion">v4.0.0</span>
             <span id="lovense-status-dot" class="lovense-status-dot lovense-status-disconnected" title="Disconnected"></span>
         </div>
         <div class="lovense-panel-controls">
@@ -69,9 +69,9 @@
                 <i class="fa-solid fa-gamepad"></i> Manual Test
             </div>
             <div class="lovense-btn-grid">
-                <button id="lovense-low" class="menu_button" title="Low"><i class="fa-solid fa-volume-low"></i></button>
-                <button id="lovense-med" class="menu_button" title="Medium"><i class="fa-solid fa-volume"></i></button>
-                <button id="lovense-high" class="menu_button" title="High"><i class="fa-solid fa-volume-high"></i></button>
+                <button id="lovense-low" class="menu_button" title="Low"><i class="fa-solid fa-signal lovense-signal-low"></i></button>
+                <button id="lovense-med" class="menu_button" title="Medium"><i class="fa-solid fa-signal lovense-signal-med"></i></button>
+                <button id="lovense-high" class="menu_button" title="High"><i class="fa-solid fa-signal"></i></button>
                 <button id="lovense-stop" class="menu_button lovense-stop-btn" title="Stop"><i class="fa-solid fa-stop"></i></button>
             </div>
             <div class="lovense-section-label lovense-sublabel">
@@ -83,6 +83,28 @@
                 <button id="lovense-fireworks" class="menu_button" title="Fireworks"><i class="fa-solid fa-fire"></i></button>
                 <button id="lovense-earthquake" class="menu_button" title="Earthquake"><i class="fa-solid fa-house-crack"></i></button>
             </div>
+        </div>
+
+        <!-- Patterns -->
+        <div class="lovense-section">
+            <div class="lovense-section-label">
+                <i class="fa-solid fa-wave-square"></i> Patterns
+            </div>
+            <div class="lovense-btn-grid lovense-btn-grid-5">
+                <button id="lovense-pat-tease" class="menu_button" title="Tease">Tease</button>
+                <button id="lovense-pat-escalate" class="menu_button" title="Escalate">Escalate</button>
+                <button id="lovense-pat-waves" class="menu_button" title="Waves">Waves</button>
+                <button id="lovense-pat-chaos" class="menu_button" title="Chaos">Chaos</button>
+                <button id="lovense-pat-heartbeat" class="menu_button" title="Heartbeat">Heartbeat</button>
+            </div>
+            <div class="lovense-section-label lovense-sublabel">
+                <i class="fa-solid fa-sliders"></i> Custom Patterns
+            </div>
+            <div id="lovense-custom-patterns-list"></div>
+            <button id="lovense-add-pattern" class="menu_button" style="margin-top:6px; font-size:0.85em;">
+                <i class="fa-solid fa-plus"></i> Create Pattern
+            </button>
+            <div id="lovense-pattern-editor" style="display:none;"></div>
         </div>
 
         <!-- Keyword Triggers -->
@@ -194,6 +216,19 @@
                         <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
                         <input type="range" id="lovense-intensity-Depth" min="1" max="3" value="2" style="flex:1;">
                         <span id="lovense-intensity-val-Depth" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">2</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lovense-action-group" data-action="Stroke">
+                <div class="lovense-action-header"><i class="fa-solid fa-chevron-right lovense-action-chevron"></i><span class="lovense-action-name">Stroke</span><span class="lovense-action-preview" id="lovense-preview-Stroke"></span></div>
+                <div class="lovense-action-body" style="display:none;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:3px; opacity:0.8;">Keywords (comma separated)</label>
+                    <textarea id="lovense-keywords-Stroke" class="text_pole" rows="2" style="width:100%; font-size:0.85em;"></textarea>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                        <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Base Intensity</label>
+                        <input type="range" id="lovense-intensity-Stroke" min="0" max="100" value="50" style="flex:1;">
+                        <span id="lovense-intensity-val-Stroke" style="font-size:0.85em; font-weight:bold; min-width:20px; text-align:center;">50</span>
                     </div>
                 </div>
             </div>

@@ -9,7 +9,22 @@ const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
 // Maximum intensity per action type (API constraint, not user-configurable).
 const ACTION_MAX = {
     Vibrate: 20, Rotate: 20, Pump: 3, Thrusting: 20,
-    Fingering: 20, Suction: 20, Oscillate: 20, Depth: 3,
+    Fingering: 20, Suction: 20, Oscillate: 20, Depth: 3, Stroke: 100,
+};
+
+// Short codes for Pattern API rule string.
+const ACTION_SHORT_CODES = {
+    Vibrate: "v", Rotate: "r", Pump: "p", Thrusting: "t",
+    Fingering: "f", Suction: "s", Depth: "d", Oscillate: "o",
+};
+
+// Built-in pattern templates (manual-only, no default keywords).
+const BUILTIN_PATTERNS = {
+    tease:     { name: "Tease",     interval: 500, strengths: [2, 3, 5, 3, 2, 1, 2, 4, 3, 1] },
+    escalate:  { name: "Escalate",  interval: 400, strengths: [1, 2, 3, 5, 7, 9, 11, 14, 17, 20] },
+    waves:     { name: "Waves",     interval: 300, strengths: [3, 6, 10, 14, 17, 20, 17, 14, 10, 6, 3, 1] },
+    chaos:     { name: "Chaos",     interval: 200, strengths: [18, 3, 15, 7, 20, 1, 12, 9, 20, 4, 16, 2] },
+    heartbeat: { name: "Heartbeat", interval: 150, strengths: [0, 15, 20, 5, 0, 0, 12, 18, 3, 0, 0, 0] },
 };
 
 const defaultSettings = {
@@ -25,7 +40,10 @@ const defaultSettings = {
         Suction:   { keywords: "suck,suction,latch,clamp,vacuum", baseIntensity: 10 },
         Oscillate: { keywords: "sway,rock,undulate,ripple,flutter", baseIntensity: 10 },
         Depth:     { keywords: "hilt,bottom out,fully inside", baseIntensity: 2 },
+        Stroke:    { keywords: "stroke,glide,slide", baseIntensity: 50 },
     },
+    patterns: {},
+    patternKeywordMode: true,
     intensityModifiers: {
         low:  ["gentle","gently","soft","softly","light","lightly","tender","tenderly","slow","slowly","faint","barely","subtle","delicate"],
         high: ["hard","harder","intense","intensely","rough","roughly","fast","faster","furious","furiously","aggressive","aggressively","powerful","powerfully","strong","stronger","fierce","fiercely","relentless"],
@@ -37,6 +55,9 @@ const defaultSettings = {
 let settings = {};
 let panelOpen = false;
 let lastStatusState = "disconnected"; // Track connection state for status dot revert
+let toyRunning = false; // True while a command/pattern/preset is active (not Stop)
+let connectedToyCapabilities = null; // null = unknown, Set of action names when toys connected
+let lovenseSocket = null; // Socket.IO connection to Lovense for instant pairing
 
 function initSettings() {
     const context = SillyTavern.getContext();
@@ -81,6 +102,14 @@ function initSettings() {
     // Ensure dock side exists (v2.x -> v3.0 migration)
     if (!settings.dockSide) {
         settings.dockSide = "right";
+    }
+
+    // v3.x -> v4.0 migration: patterns
+    if (!settings.patterns) {
+        settings.patterns = {};
+    }
+    if (settings.patternKeywordMode === undefined) {
+        settings.patternKeywordMode = true;
     }
 
     extensionSettings[extensionName] = settings;
@@ -183,8 +212,10 @@ function updateStatusDot(state) {
     const titles = { disconnected: "Disconnected", connected: "Connected", sending: "Sending..." };
     $dot.attr("title", titles[state] || "");
 
-    // Update orb state to match connection status
-    const orbState = state === "sending" ? "active" : state;
+    // Update orb state: keep "active" if toy is still running
+    const orbState = state === "sending" ? "active"
+        : (toyRunning && state !== "disconnected") ? "active"
+        : state;
     updateOrbState(orbState);
 
     if (state !== "sending") {
@@ -289,11 +320,8 @@ async function getQrCode() {
                 $qrToggle.css("display", "");
                 $qrToggle.find("span").text("Hide QR Code");
                 $qrToggle.find("i").css("transform", "rotate(180deg)");
-                // Auto-check toy status after a delay (user needs time to scan)
-                setTimeout(async () => {
-                    const status = await getToyStatus();
-                    renderToyStatus(status);
-                }, 15000);
+                // Try instant pairing via Socket API, fall back to polling
+                connectLovenseSocket();
             } else {
                 // Fallback if we still can't find a URL
                 $("#lovense-qr-container").html(`
@@ -338,10 +366,12 @@ async function sendCommand(action) {
     triggerCommandPulse();
     flashOrb();
 
-    // Orb + ambient glow state
+    // Track running state for persistent orb animation
     if (action === "Stop") {
+        toyRunning = false;
         setAmbientGlow(false);
     } else {
+        toyRunning = true;
         updateOrbState("active");
         setAmbientGlow(true);
     }
@@ -358,7 +388,7 @@ async function sendCommand(action) {
         console.error("[Lovense] Command Failed:", e);
     }
 
-    // Revert status dot after brief pulse (also reverts orb via updateStatusDot)
+    // Revert status dot after brief pulse (orb stays active if toyRunning)
     setTimeout(() => updateStatusDot(lastStatusState), 1000);
 }
 
@@ -382,6 +412,7 @@ async function sendPreset(name) {
     updateActivityFeed(`Preset: ${name}`);
     triggerCommandPulse();
     flashOrb();
+    toyRunning = true;
     updateOrbState("active");
     setAmbientGlow(true);
 
@@ -397,7 +428,50 @@ async function sendPreset(name) {
         console.error("[Lovense] Preset Failed:", e);
     }
 
-    // Revert status dot after brief pulse
+    // Revert status dot after brief pulse (orb stays active if toyRunning)
+    setTimeout(() => updateStatusDot(lastStatusState), 1000);
+}
+
+// Sends a Pattern command with a custom strength sequence.
+async function sendPattern(patternDef, actionTypes) {
+    if (!settings.isEnabled || !DEV_TOKEN || DEV_TOKEN === "PASTE_YOUR_TOKEN_HERE") return;
+
+    const shortCodes = (actionTypes || ["v"]).join("");
+    const rule = `V:1;F:${shortCodes};S:${patternDef.interval}#`;
+    const strength = patternDef.strengths.join(";");
+
+    const payload = {
+        token: DEV_TOKEN,
+        uid: settings.uid,
+        command: "Pattern",
+        rule: rule,
+        strength: strength,
+        timeSec: 0,
+        apiVer: 1,
+    };
+
+    console.log(`[Lovense] Sending pattern: ${patternDef.name} (${rule})`);
+
+    updateStatusDot("sending");
+    updateActivityFeed(`Pattern: ${patternDef.name}`);
+    triggerCommandPulse();
+    flashOrb();
+    toyRunning = true;
+    updateOrbState("active");
+    setAmbientGlow(true);
+
+    try {
+        const response = await fetch("https://api.lovense.com/api/lan/v2/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        console.log("[Lovense] Pattern response:", data);
+    } catch (e) {
+        console.error("[Lovense] Pattern Failed:", e);
+    }
+
     setTimeout(() => updateStatusDot(lastStatusState), 1000);
 }
 
@@ -440,6 +514,8 @@ function renderToyStatus(data) {
     console.log("[Lovense] renderToyStatus raw:", JSON.stringify(data));
     if (!data || (data.code != 200 && data.result !== true) || !data.data || !data.data.toys) {
         container.html('<span class="lovense-placeholder">No toys detected. Scan QR and connect first.</span>');
+        connectedToyCapabilities = null;
+        updateActionGroupVisibility();
         updateStatusDot("disconnected");
         return;
     }
@@ -449,6 +525,8 @@ function renderToyStatus(data) {
         toys = typeof data.data.toys === "string" ? JSON.parse(data.data.toys) : data.data.toys;
     } catch (e) {
         container.html('<span class="lovense-placeholder">Could not parse toy data.</span>');
+        connectedToyCapabilities = null;
+        updateActionGroupVisibility();
         updateStatusDot("disconnected");
         return;
     }
@@ -456,20 +534,30 @@ function renderToyStatus(data) {
     const entries = Object.values(toys);
     if (entries.length === 0) {
         container.html('<span class="lovense-placeholder">No toys connected.</span>');
+        connectedToyCapabilities = null;
+        updateActionGroupVisibility();
         updateStatusDot("disconnected");
         return;
     }
 
+    // Collect capabilities from all connected toys
+    const allCapabilities = new Set();
     let hasConnected = false;
 
     const html = '<div class="lovense-toy-cards">' + entries.map(toy => {
         const connected = toy.status === "1" || toy.status === 1;
-        if (connected) hasConnected = true;
+        if (connected) {
+            hasConnected = true;
+            if (Array.isArray(toy.fullFunctionNames)) {
+                toy.fullFunctionNames.forEach(fn => allCapabilities.add(fn));
+            }
+        }
         const name = toy.nickName || toy.name || "Unknown";
         const battery = toy.battery != null ? parseInt(toy.battery) : null;
         const batteryDisplay = battery != null ? `${battery}%` : "?";
         const batteryWidth = battery != null ? Math.max(2, battery) : 0;
         const batteryColor = battery != null ? getBatteryColor(battery) : "rgba(255,255,255,0.2)";
+        const functions = Array.isArray(toy.fullFunctionNames) ? toy.fullFunctionNames.join(", ") : "";
 
         return `<div class="lovense-toy-card">
             <div class="lovense-toy-card-header">
@@ -483,11 +571,289 @@ function renderToyStatus(data) {
                 </div>
                 <span class="lovense-toy-battery-text">${batteryDisplay}</span>
             </div>
+            ${functions ? `<div class="lovense-toy-functions">${functions}</div>` : ""}
         </div>`;
     }).join("") + '</div>';
 
     container.html(html);
+    connectedToyCapabilities = allCapabilities.size > 0 ? allCapabilities : null;
+    updateActionGroupVisibility();
     updateStatusDot(hasConnected ? "connected" : "disconnected");
+}
+
+function updateActionGroupVisibility() {
+    for (const actionName of Object.keys(ACTION_MAX)) {
+        const $group = $(`.lovense-action-group[data-action="${actionName}"]`);
+        if (!$group.length) continue;
+
+        if (connectedToyCapabilities === null || connectedToyCapabilities.has(actionName)) {
+            $group.removeClass("lovense-action-unsupported");
+            $group.attr("title", "");
+        } else {
+            $group.addClass("lovense-action-unsupported");
+            $group.attr("title", "Not supported by connected toys");
+        }
+    }
+}
+
+// --- SOCKET API (INSTANT PAIRING) ---
+
+function loadSocketIO() {
+    return new Promise((resolve, reject) => {
+        if (typeof io !== "undefined") {
+            resolve(io);
+            return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://cdn.socket.io/2.5.0/socket.io.min.js";
+        script.onload = () => resolve(io);
+        script.onerror = () => reject(new Error("Failed to load Socket.IO"));
+        document.head.appendChild(script);
+    });
+}
+
+async function connectLovenseSocket() {
+    try {
+        const socketIO = await loadSocketIO();
+
+        if (lovenseSocket) {
+            lovenseSocket.disconnect();
+        }
+
+        lovenseSocket = socketIO("wss://api.lovense.com", {
+            transports: ["websocket"],
+            path: "/socket.io",
+            query: {
+                token: DEV_TOKEN,
+                uid: settings.uid,
+                platform: "js",
+            },
+        });
+
+        lovenseSocket.on("connect", () => {
+            console.log("[Lovense] Socket connected");
+        });
+
+        lovenseSocket.on("basicapi_update_app_status_tc", (data) => {
+            console.log("[Lovense] QR scanned event:", data);
+            toastr.success("Toy app connected!");
+            getToyStatus().then(renderToyStatus);
+        });
+
+        lovenseSocket.on("basicapi_update_device_info_tc", (data) => {
+            console.log("[Lovense] Device info update:", data);
+            getToyStatus().then(renderToyStatus);
+        });
+
+        lovenseSocket.on("basicapi_update_app_online_tc", (data) => {
+            console.log("[Lovense] App online status:", data);
+            if (data && data.status === 0) {
+                updateStatusDot("disconnected");
+                connectedToyCapabilities = null;
+                updateActionGroupVisibility();
+            }
+        });
+
+        lovenseSocket.on("disconnect", () => {
+            console.log("[Lovense] Socket disconnected");
+        });
+
+        lovenseSocket.on("error", (err) => {
+            console.error("[Lovense] Socket error:", err);
+        });
+
+    } catch (e) {
+        console.warn("[Lovense] Socket.IO unavailable, falling back to polling:", e);
+        // Fallback to 15-second polling
+        setTimeout(async () => {
+            const status = await getToyStatus();
+            renderToyStatus(status);
+        }, 15000);
+    }
+}
+
+// --- PATTERN MANAGEMENT ---
+
+function generatePatternId() {
+    return "pat_" + Math.random().toString(36).substr(2, 8);
+}
+
+function renderPatternPreview(strengths) {
+    const max = Math.max(1, ...strengths);
+    return '<div class="lovense-pattern-preview">' +
+        strengths.map(v => `<div class="lovense-pattern-bar" style="height: ${Math.max(1, (v / max) * 16)}px;"></div>`).join("") +
+        '</div>';
+}
+
+function renderPatternList() {
+    const $list = $("#lovense-custom-patterns-list");
+    if (!$list.length) return;
+
+    const patterns = settings.patterns || {};
+    const ids = Object.keys(patterns);
+
+    if (ids.length === 0) {
+        $list.html('<span class="lovense-placeholder" style="font-size:0.8em;">No custom patterns yet.</span>');
+        return;
+    }
+
+    $list.html(ids.map(id => {
+        const p = patterns[id];
+        return `<div class="lovense-pattern-item" data-id="${id}">
+            ${renderPatternPreview(p.strengths)}
+            <span class="lovense-pattern-name">${p.name}</span>
+            <div class="lovense-pattern-actions">
+                <button class="menu_button lovense-pat-play" data-id="${id}" title="Play"><i class="fa-solid fa-play"></i></button>
+                <button class="menu_button lovense-pat-edit" data-id="${id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                <button class="menu_button lovense-pat-delete" data-id="${id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`;
+    }).join(""));
+
+    // Bind pattern list actions
+    $list.find(".lovense-pat-play").off("click").on("click", function () {
+        const id = $(this).data("id");
+        const p = settings.patterns[id];
+        if (p) {
+            flashButton($(this));
+            sendPattern(p, p.actionTypes || ["v"]);
+        }
+    });
+    $list.find(".lovense-pat-edit").off("click").on("click", function () {
+        openPatternEditor($(this).data("id"));
+    });
+    $list.find(".lovense-pat-delete").off("click").on("click", function () {
+        const id = $(this).data("id");
+        delete settings.patterns[id];
+        saveSettings();
+        renderPatternList();
+    });
+}
+
+function openPatternEditor(editId) {
+    const $editor = $("#lovense-pattern-editor");
+    const isEdit = editId && settings.patterns[editId];
+    const pattern = isEdit ? settings.patterns[editId] : {
+        name: "", interval: 300, strengths: [5, 10, 15, 20, 15, 10, 5, 3], keywords: "", actionTypes: ["v"],
+    };
+
+    $editor.data("editId", editId || "");
+
+    $editor.html(`
+        <div class="lovense-editor-form">
+            <label style="font-size:0.8em; opacity:0.8;">Pattern Name</label>
+            <input type="text" id="lovense-editor-name" class="text_pole" value="${pattern.name}" placeholder="My Pattern" style="width:100%; font-size:0.85em;">
+
+            <label style="font-size:0.8em; opacity:0.8; margin-top:6px; display:block;">Intensity Bars <span style="opacity:0.5;">(click/drag to draw, max 50)</span></label>
+            <div id="lovense-bar-editor" class="lovense-bar-editor"></div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+                <button id="lovense-editor-add-bar" class="menu_button" style="font-size:0.75em;"><i class="fa-solid fa-plus"></i> Bar</button>
+                <button id="lovense-editor-remove-bar" class="menu_button" style="font-size:0.75em;"><i class="fa-solid fa-minus"></i> Bar</button>
+                <span id="lovense-editor-bar-count" style="font-size:0.75em; opacity:0.5; margin-left:auto; align-self:center;">${pattern.strengths.length} bars</span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+                <label style="font-size:0.8em; opacity:0.8; white-space:nowrap;">Interval (ms)</label>
+                <input type="range" id="lovense-editor-interval" min="100" max="1000" step="50" value="${pattern.interval}" style="flex:1;">
+                <span id="lovense-editor-interval-val" style="font-size:0.85em; font-weight:bold; min-width:40px; text-align:center;">${pattern.interval}ms</span>
+            </div>
+
+            <label style="font-size:0.8em; opacity:0.8; margin-top:6px; display:block;">Action Types</label>
+            <div id="lovense-editor-actions" class="lovense-editor-actions">
+                ${Object.entries(ACTION_SHORT_CODES).map(([name, code]) =>
+                    `<label class="lovense-editor-action-label"><input type="checkbox" value="${code}" ${pattern.actionTypes.includes(code) ? "checked" : ""}> ${name}</label>`
+                ).join("")}
+            </div>
+
+            <label style="font-size:0.8em; opacity:0.8; margin-top:6px; display:block;">Keywords <span style="opacity:0.5;">(comma separated, for automation)</span></label>
+            <input type="text" id="lovense-editor-keywords" class="text_pole" value="${pattern.keywords || ""}" placeholder="Optional" style="width:100%; font-size:0.85em;">
+
+            <div style="display:flex; gap:6px; margin-top:8px;">
+                <button id="lovense-editor-save" class="menu_button" style="flex:1;"><i class="fa-solid fa-check"></i> Save</button>
+                <button id="lovense-editor-cancel" class="menu_button" style="flex:1;"><i class="fa-solid fa-xmark"></i> Cancel</button>
+            </div>
+        </div>
+    `);
+
+    // Store strengths in editor data
+    $editor.data("strengths", [...pattern.strengths]);
+    renderBarEditor();
+
+    // Interval slider
+    $("#lovense-editor-interval").on("input", function () {
+        $("#lovense-editor-interval-val").text($(this).val() + "ms");
+    });
+
+    // Add/remove bars
+    $("#lovense-editor-add-bar").on("click", function () {
+        const s = $editor.data("strengths");
+        if (s.length < 50) { s.push(10); $editor.data("strengths", s); renderBarEditor(); }
+    });
+    $("#lovense-editor-remove-bar").on("click", function () {
+        const s = $editor.data("strengths");
+        if (s.length > 2) { s.pop(); $editor.data("strengths", s); renderBarEditor(); }
+    });
+
+    // Save
+    $("#lovense-editor-save").on("click", function () {
+        const name = $("#lovense-editor-name").val().trim() || "Untitled";
+        const interval = parseInt($("#lovense-editor-interval").val()) || 300;
+        const strengths = $editor.data("strengths");
+        const keywords = $("#lovense-editor-keywords").val().trim();
+        const actionTypes = [];
+        $("#lovense-editor-actions input:checked").each(function () { actionTypes.push($(this).val()); });
+        if (actionTypes.length === 0) actionTypes.push("v");
+
+        const id = isEdit ? editId : generatePatternId();
+        settings.patterns[id] = { name, interval, strengths, keywords, actionTypes };
+        saveSettings();
+        $editor.slideUp(150);
+        renderPatternList();
+    });
+
+    // Cancel
+    $("#lovense-editor-cancel").on("click", function () {
+        $editor.slideUp(150);
+    });
+
+    $editor.slideDown(150);
+}
+
+function renderBarEditor() {
+    const $editor = $("#lovense-pattern-editor");
+    const strengths = $editor.data("strengths") || [];
+    const $container = $("#lovense-bar-editor");
+    const maxVal = 20;
+
+    $container.html(strengths.map((v, i) =>
+        `<div class="lovense-editor-bar" data-index="${i}" style="height: ${Math.max(2, (v / maxVal) * 60)}px;" title="${v}"></div>`
+    ).join(""));
+
+    $("#lovense-editor-bar-count").text(`${strengths.length} bars`);
+
+    // Click/drag to set bar heights
+    let dragging = false;
+    $container.off("mousedown mousemove mouseup mouseleave");
+    $container.on("mousedown", ".lovense-editor-bar", function (e) {
+        dragging = true;
+        setBarFromEvent(e, $(this));
+    });
+    $container.on("mousemove", ".lovense-editor-bar", function (e) {
+        if (dragging) setBarFromEvent(e, $(this));
+    });
+    $(document).on("mouseup.barEditor", () => { dragging = false; });
+
+    function setBarFromEvent(e, $bar) {
+        const rect = $container[0].getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const height = rect.height;
+        const ratio = Math.max(0, Math.min(1, 1 - (y / height)));
+        const value = Math.round(ratio * maxVal);
+        const idx = parseInt($bar.data("index"));
+        const s = $editor.data("strengths");
+        s[idx] = value;
+        $bar.css("height", Math.max(2, (value / maxVal) * 60) + "px").attr("title", value);
+    }
 }
 
 // --- AUTOMATION ---
@@ -540,7 +906,19 @@ function onMessageReceived(messageIndex) {
             }
         }
 
-        // 3. Send combined command if any actions matched
+        // 3. Check custom pattern keywords (patterns take priority)
+        if (settings.patternKeywordMode) {
+            for (const [patternId, pattern] of Object.entries(settings.patterns || {})) {
+                const patternKeywords = (pattern.keywords || "").split(",").map(s => s.trim()).filter(Boolean);
+                if (patternKeywords.some(word => word && text.includes(word))) {
+                    console.log(`[Lovense] Pattern keyword match -> ${pattern.name}`);
+                    sendPattern(pattern, pattern.actionTypes || ["v"]);
+                    return;
+                }
+            }
+        }
+
+        // 4. Send combined command if any actions matched
         if (matchedActions.length > 0) {
             const combined = matchedActions.join(",");
             console.log(`[Lovense] Keyword matches -> ${combined} (modifier: ${modifier}x)`);
@@ -681,6 +1059,18 @@ async function loadSettings() {
         $("#lovense-fireworks").on("click", function () { flashButton($(this)); sendPreset("fireworks"); });
         $("#lovense-earthquake").on("click", function () { flashButton($(this)); sendPreset("earthquake"); });
 
+        // Built-in pattern buttons
+        for (const [key, pattern] of Object.entries(BUILTIN_PATTERNS)) {
+            $(`#lovense-pat-${key}`).on("click", function () {
+                flashButton($(this));
+                sendPattern(pattern, ["v"]);
+            });
+        }
+
+        // Custom pattern management
+        renderPatternList();
+        $("#lovense-add-pattern").on("click", function () { openPatternEditor(); });
+
         // Toy status
         $("#lovense-refresh-status").on("click", async function () {
             flashButton($(this));
@@ -699,6 +1089,11 @@ async function loadSettings() {
 
         // Initial orb state
         updateOrbState("disconnected");
+
+        // Cleanup socket on page unload
+        window.addEventListener("beforeunload", () => {
+            if (lovenseSocket) lovenseSocket.disconnect();
+        });
 
         console.log("[Lovense] UI Loaded Successfully.");
 

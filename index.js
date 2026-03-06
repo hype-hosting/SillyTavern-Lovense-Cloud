@@ -649,25 +649,45 @@ async function initSocketApi() {
 function handleSocketDeviceInfo(res) {
     try {
         const resData = typeof res === "string" ? JSON.parse(res) : (res || {});
-        console.log("[Lovense] Parsed device info:", resData);
+        console.log("[Lovense] Parsed device info — full structure:", JSON.stringify(resData, null, 2));
+        console.log("[Lovense] Top-level keys:", Object.keys(resData));
 
         // Store raw data for fallback
         lastKnownToyData = resData;
 
         // Normalize to the format renderToyStatus() expects
-        // Socket event data may contain toys directly or nested under various keys
+        // Socket event data may contain toys under various keys depending on event type
         let toys = null;
+
+        // Try direct .toys
         if (resData.toys) {
             toys = typeof resData.toys === "string" ? JSON.parse(resData.toys) : resData.toys;
-        } else if (resData.data && resData.data.toys) {
+        }
+        // Try nested .data.toys
+        if (!toys && resData.data && resData.data.toys) {
             toys = typeof resData.data.toys === "string" ? JSON.parse(resData.data.toys) : resData.data.toys;
         }
+        // Try .deviceInfo (some events use this)
+        if (!toys && resData.deviceInfo) {
+            const devInfo = typeof resData.deviceInfo === "string" ? JSON.parse(resData.deviceInfo) : resData.deviceInfo;
+            if (devInfo.toys) {
+                toys = typeof devInfo.toys === "string" ? JSON.parse(devInfo.toys) : devInfo.toys;
+            } else {
+                // deviceInfo might itself be the toys object
+                toys = devInfo;
+            }
+        }
+        // Try .toyData
+        if (!toys && resData.toyData) {
+            toys = typeof resData.toyData === "string" ? JSON.parse(resData.toyData) : resData.toyData;
+        }
 
-        if (toys) {
+        if (toys && typeof toys === "object" && Object.keys(toys).length > 0) {
+            console.log("[Lovense] Found toys:", JSON.stringify(toys));
             renderToyStatus({ result: true, code: 200, data: { toys: toys } });
         } else {
             // Event arrived but no toy details — may just be an app status update
-            console.log("[Lovense] Device info event had no toy details, raw:", resData);
+            console.log("[Lovense] Device info event had no toy details. All keys explored:", JSON.stringify(resData));
             // Still mark as connected if we got any event
             updateStatusDot("connected");
         }
@@ -697,29 +717,46 @@ async function connectLovenseSocket() {
             rememberUpgrade: false,
         });
 
+        // Catch-all: log every event the socket receives so we can see what Lovense actually sends
+        const origOnevent = lovenseSocket.onevent;
+        lovenseSocket.onevent = function (packet) {
+            const args = packet.data || [];
+            console.log("[Lovense] Socket event:", args[0], "data:", JSON.stringify(args.slice(1)));
+            origOnevent.call(this, packet);
+        };
+
         lovenseSocket.on("connect", () => {
-            console.log("[Lovense] Socket connected");
+            console.log("[Lovense] Socket connected, id:", lovenseSocket.id);
         });
 
         lovenseSocket.on("basicapi_update_app_status_tc", (res) => {
-            console.log("[Lovense] QR scanned event:", res);
+            console.log("[Lovense] QR scanned event (raw):", JSON.stringify(res));
             toastr.success("Toy app connected!");
             handleSocketDeviceInfo(res);
         });
 
         lovenseSocket.on("basicapi_update_device_info_tc", (res) => {
-            console.log("[Lovense] Device info update:", res);
+            console.log("[Lovense] Device info update (raw):", JSON.stringify(res));
             handleSocketDeviceInfo(res);
         });
 
         lovenseSocket.on("basicapi_update_app_online_tc", (res) => {
-            console.log("[Lovense] App online status:", res);
+            console.log("[Lovense] App online status (raw):", JSON.stringify(res));
             const data = typeof res === "string" ? JSON.parse(res) : (res || {});
             if (data.status === 0) {
                 updateStatusDot("disconnected");
                 connectedToyCapabilities = null;
                 lastKnownToyData = null;
                 updateActionGroupVisibility();
+            } else {
+                // App came online — try requesting toy info via HTTP as a fallback
+                console.log("[Lovense] App online, requesting toy status via HTTP fallback...");
+                setTimeout(async () => {
+                    const status = await getToyStatus();
+                    if (status && !lastKnownToyData) {
+                        renderToyStatus(status);
+                    }
+                }, 2000);
             }
         });
 
